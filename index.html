@@ -2,7 +2,10 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#9333ea">
     <title>GitHub Chat - React Version</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -10,15 +13,91 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
-        /* Prevent iOS zoom on input focus */
+        /* Cross-platform fixes */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        /* Allow text selection in inputs and textareas */
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        /* Custom viewport height for mobile */
+        :root {
+            --vh: 1vh;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+        
+        /* Prevent zoom on all mobile devices */
         input, textarea, select {
             font-size: 16px !important;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 0;
         }
         
-        .message-animation {
-            animation: slideInUp 0.3s ease-out;
+        /* Cross-platform height fix */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
         
+        #root {
+            height: 100%;
+            height: calc(var(--vh, 1vh) * 100);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Safe areas for all devices */
+        .safe-top {
+            padding-top: var(--safe-top);
+        }
+        
+        .safe-bottom {
+            padding-bottom: var(--safe-bottom);
+        }
+        
+        .safe-left {
+            padding-left: var(--safe-left);
+        }
+        
+        .safe-right {
+            padding-right: var(--safe-right);
+        }
+        
+        /* Scrolling improvements */
+        .scroll-smooth {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -ms-overflow-style: -ms-autohiding-scrollbar;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .hide-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+        
+        /* Animations that work everywhere */
         @keyframes slideInUp {
             from {
                 opacity: 0;
@@ -29,85 +108,177 @@
                 transform: translateY(0);
             }
         }
-
-        .spinner {
-            animation: spin 1s linear infinite;
+        
+        .message-animation {
+            animation: slideInUp 0.3s ease-out;
         }
 
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-
-        .session-card {
-            transition: all 0.2s ease;
-        }
-
-        .session-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-
-        .pulse-online {
-            animation: pulse-green 2s infinite;
+        
+        .spinner {
+            animation: spin 1s linear infinite;
         }
 
         @keyframes pulse-green {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        
+        .pulse-online {
+            animation: pulse-green 2s infinite;
+        }
 
+        /* Card hover effects */
+        .session-card {
+            transition: all 0.2s ease;
+        }
+
+        @media (hover: hover) {
+            .session-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            }
+        }
+
+        /* Message content styling */
         .message-content {
             word-wrap: break-word;
             white-space: pre-wrap;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
-        .encryption-section {
+        /* Cross-platform gradients */
+        .gradient-purple {
+            background: #9333ea;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
         }
-
-        .auth-section {
+        
+        .gradient-pink {
+            background: #ec4899;
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+            background: -webkit-linear-gradient(315deg, #f093fb 0%, #f5576c 100%);
         }
         
-        /* Mobile drawer animation */
-        .drawer-enter {
+        .gradient-button {
+            background: #a855f7;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            background: -webkit-linear-gradient(315deg, #a855f7 0%, #ec4899 100%);
+        }
+        
+        /* Mobile drawer */
+        .drawer-mobile {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 16rem;
             transform: translateX(-100%);
-        }
-        
-        .drawer-enter-active {
-            transform: translateX(0);
             transition: transform 0.3s ease-out;
+            z-index: 40;
         }
         
-        /* Hide scrollbar on mobile */
-        @media (max-width: 768px) {
-            .hide-scrollbar {
-                -ms-overflow-style: none;
-                scrollbar-width: none;
-            }
-            .hide-scrollbar::-webkit-scrollbar {
-                display: none;
-            }
-        }
-
-        /* Safe area handling for iOS */
-        .safe-top {
-            padding-top: env(safe-area-inset-top);
+        .drawer-mobile.open {
+            transform: translateX(0);
         }
         
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom);
+        /* Modal backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        
+        /* Fix input styles */
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        textarea {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 0.5rem;
+            background-color: white;
+        }
+        
+        /* Fix button styles */
+        button {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        /* Prevent overscroll on iOS */
+        .prevent-overscroll {
+            overscroll-behavior: contain;
+        }
+        
+        /* Fix for Android keyboard */
+        .android-keyboard-fix {
+            transform: translate3d(0, 0, 0);
         }
     </style>
 </head>
-<body class="h-full bg-gray-50">
+<body class="h-full bg-gray-50 prevent-overscroll">
     <div id="root" class="h-full"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
+        
+        // Platform detection
+        const getPlatform = () => {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                return 'ios';
+            }
+            if (/android/i.test(userAgent)) {
+                return 'android';
+            }
+            return 'desktop';
+        };
+        
+        // Viewport height fix for mobile
+        const useViewportFix = () => {
+            useEffect(() => {
+                const setViewportHeight = () => {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', `${vh}px`);
+                };
+                
+                setViewportHeight();
+                
+                const handleResize = () => {
+                    setViewportHeight();
+                };
+                
+                window.addEventListener('resize', handleResize);
+                window.addEventListener('orientationchange', handleResize);
+                
+                // Fix for Android keyboard
+                if (getPlatform() === 'android') {
+                    window.visualViewport?.addEventListener('resize', handleResize);
+                }
+                
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    window.removeEventListener('orientationchange', handleResize);
+                    if (getPlatform() === 'android') {
+                        window.visualViewport?.removeEventListener('resize', handleResize);
+                    }
+                };
+            }, []);
+        };
 
         // Encryption Helper Class
         class ChatEncryption {
@@ -183,7 +354,7 @@
             }
         }
 
-        // User Authentication Class
+        // User Authentication Class  
         class UserAuth {
             constructor(encryption) {
                 this.encryption = encryption;
@@ -774,11 +945,11 @@
 
         const SessionModal = ({ sessions, loading, onSelectSession, onNewSession, onRemoveSession }) => {
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
                         <div className="p-6 md:p-8 border-b border-gray-200">
                             <div className="text-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="w-16 h-16 md:w-20 md:h-20 gradient-button rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i className="fas fa-user-shield text-white text-2xl md:text-3xl"></i>
                                 </div>
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">GitHub Chat</h1>
@@ -786,7 +957,7 @@
                             </div>
                         </div>
 
-                        <div className="p-4 md:p-6 overflow-y-auto max-h-96">
+                        <div className="p-4 md:p-6 scroll-smooth hide-scrollbar max-h-96">
                             {loading ? (
                                 <div className="text-center py-8">
                                     <i className="fas fa-spinner spinner text-gray-400 text-2xl mb-4"></i>
@@ -815,10 +986,8 @@
                                                                     <div className="font-semibold text-gray-900 text-sm md:text-base truncate">{session.username}</div>
                                                                     <div className="text-xs md:text-sm text-gray-600 truncate">{session.owner}/{session.repo}</div>
                                                                     <div className="text-xs text-gray-500 flex flex-wrap items-center gap-1 mt-1">
-                                                                        <span className="hidden sm:inline">Last used: {new Date(session.lastUsed).toLocaleDateString()}</span>
-                                                                        <span className="px-1 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">
-                                                                            🔒
-                                                                        </span>
+                                                                        <span className="hidden sm:inline">Last: {new Date(session.lastUsed).toLocaleDateString()}</span>
+                                                                        <span className="px-1 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">🔒</span>
                                                                         <span className="px-1 py-0.5 bg-pink-100 text-pink-600 rounded text-xs">🛡️</span>
                                                                     </div>
                                                                 </div>
@@ -841,7 +1010,7 @@
 
                                     <button
                                         onClick={onNewSession}
-                                        className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base"
+                                        className="w-full gradient-button text-white py-3 rounded-lg font-medium hover:opacity-90 transition-all flex items-center justify-center text-sm md:text-base"
                                     >
                                         <i className="fas fa-plus mr-2"></i>
                                         Create New Session
@@ -865,10 +1034,10 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
                         <div className="text-center mb-6 md:mb-8">
-                            <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-14 h-14 md:w-16 md:h-16 gradient-button rounded-full flex items-center justify-center mx-auto mb-4">
                                 <i className="fas fa-lock text-white text-xl md:text-2xl"></i>
                             </div>
                             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Enter Password</h2>
@@ -895,7 +1064,7 @@
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center disabled:opacity-50 text-sm md:text-base"
+                                    className="flex-1 gradient-button text-white py-3 rounded-lg font-medium hover:opacity-90 transition-all flex items-center justify-center disabled:opacity-50 text-sm md:text-base"
                                 >
                                     {loading ? (
                                         <span className="flex items-center">
@@ -948,11 +1117,11 @@
             };
 
             return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
                         <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
                             <div className="text-center">
-                                <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                                <div className="w-14 h-14 md:w-16 md:h-16 gradient-button rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                                     <i className="fas fa-user-shield text-white text-xl md:text-2xl"></i>
                                 </div>
                                 <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">Create Authenticated Chat</h2>
@@ -960,7 +1129,7 @@
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto hide-scrollbar">
+                        <div className="flex-1 scroll-smooth hide-scrollbar android-keyboard-fix">
                             <div className="p-4 md:p-6 space-y-4 md:space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Repository Owner</label>
@@ -997,87 +1166,89 @@
                                         required
                                     />
                                     <p className="text-xs text-gray-500 mt-1">
-                                        <a href="https://github.com/settings/tokens" target="_blank" className="text-purple-600 hover:underline">
+                                        <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
                                             Create a token
                                         </a>
                                     </p>
                                 </div>
 
-                                <div className="auth-section p-3 md:p-4 rounded-lg">
-                                    <h4 className="font-medium mb-3 md:mb-4 flex items-center text-sm md:text-base">
+                                <div className="gradient-pink p-3 md:p-4 rounded-lg">
+                                    <h4 className="font-medium mb-3 md:mb-4 flex items-center text-sm md:text-base text-white">
                                         <i className="fas fa-user-lock mr-2"></i>
                                         User Authentication
                                     </h4>
                                     
                                     <div className="space-y-3 md:space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium mb-1 md:mb-2">Username</label>
+                                            <label className="block text-sm font-medium mb-1 md:mb-2 text-white">Username</label>
                                             <input
                                                 type="text"
                                                 value={formData.username}
                                                 onChange={(e) => handleChange('username', e.target.value)}
                                                 placeholder="Your unique username"
-                                                className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 text-base"
+                                                className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 text-base backdrop-blur-sm"
                                                 required
                                             />
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium mb-1 md:mb-2">Password</label>
+                                            <label className="block text-sm font-medium mb-1 md:mb-2 text-white">Password</label>
                                             <input
                                                 type="password"
                                                 value={formData.password}
                                                 onChange={(e) => handleChange('password', e.target.value)}
                                                 placeholder="Create a strong password"
-                                                className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 text-base"
+                                                className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 text-base backdrop-blur-sm"
                                                 required
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="encryption-section p-3 md:p-4 rounded-lg">
-                                    <h4 className="font-medium mb-3 md:mb-4 flex items-center text-sm md:text-base">
+                                <div className="gradient-purple p-3 md:p-4 rounded-lg">
+                                    <h4 className="font-medium mb-3 md:mb-4 flex items-center text-sm md:text-base text-white">
                                         <i className="fas fa-lock mr-2"></i>
                                         Message Encryption
                                     </h4>
                                     
                                     <div className="space-y-3 md:space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium mb-2">Method</label>
+                                            <label className="block text-sm font-medium mb-2 text-white">Method</label>
                                             <div className="space-y-2">
-                                                <label className="flex items-center">
+                                                <label className="flex items-center text-white">
                                                     <input
                                                         type="radio"
                                                         name="encryption-method"
                                                         value="token"
                                                         checked={formData.encryptionMethod === 'token'}
                                                         onChange={(e) => handleChange('encryptionMethod', e.target.value)}
+                                                        className="mr-2"
                                                     />
-                                                    <span className="ml-2 text-xs md:text-sm">Use GitHub Token</span>
+                                                    <span className="text-xs md:text-sm">Use GitHub Token</span>
                                                 </label>
-                                                <label className="flex items-center">
+                                                <label className="flex items-center text-white">
                                                     <input
                                                         type="radio"
                                                         name="encryption-method"
                                                         value="custom"
                                                         checked={formData.encryptionMethod === 'custom'}
                                                         onChange={(e) => handleChange('encryptionMethod', e.target.value)}
+                                                        className="mr-2"
                                                     />
-                                                    <span className="ml-2 text-xs md:text-sm">Custom key</span>
+                                                    <span className="text-xs md:text-sm">Custom key</span>
                                                 </label>
                                             </div>
                                         </div>
 
                                         {formData.encryptionMethod === 'custom' && (
                                             <div>
-                                                <label className="block text-sm font-medium mb-1 md:mb-2">Custom Key</label>
+                                                <label className="block text-sm font-medium mb-1 md:mb-2 text-white">Custom Key</label>
                                                 <input
                                                     type="password"
                                                     value={formData.customKey}
                                                     onChange={(e) => handleChange('customKey', e.target.value)}
                                                     placeholder="Enter passphrase..."
-                                                    className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 text-base"
+                                                    className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 text-base backdrop-blur-sm"
                                                 />
                                             </div>
                                         )}
@@ -1086,13 +1257,13 @@
                             </div>
                         </div>
 
-                        <div className="p-4 md:p-6 border-t border-gray-200 flex-shrink-0">
+                        <div className="p-4 md:p-6 border-t border-gray-200 flex-shrink-0 safe-bottom">
                             <form onSubmit={handleSubmit}>
                                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base"
+                                        className="flex-1 gradient-button text-white py-3 rounded-lg font-medium hover:opacity-90 transition-all flex items-center justify-center text-sm md:text-base"
                                     >
                                         {loading ? (
                                             <>
@@ -1126,12 +1297,12 @@
                             {isMobile && (
                                 <button
                                     onClick={onToggleUsers}
-                                    className="text-gray-600 hover:text-gray-900 transition-colors md:hidden"
+                                    className="text-gray-600 hover:text-gray-900 transition-colors md:hidden p-1"
                                 >
                                     <i className="fas fa-bars text-lg"></i>
                                 </button>
                             )}
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 md:w-10 md:h-10 gradient-button rounded-full flex items-center justify-center flex-shrink-0">
                                 <i className="fas fa-user-shield text-white text-sm md:text-base"></i>
                             </div>
                             <div className="min-w-0">
@@ -1183,12 +1354,12 @@
                             <p className="text-xs text-gray-500 mt-1">Verified users only</p>
                         </div>
                         {isMobile && (
-                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 md:hidden">
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 md:hidden p-1">
                                 <i className="fas fa-times"></i>
                             </button>
                         )}
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 scroll-smooth hide-scrollbar p-4">
                         <div className="space-y-2">
                             {userList.map(user => (
                                 <div key={user.sessionId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
@@ -1217,14 +1388,12 @@
                     <>
                         {isOpen && (
                             <div 
-                                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                                className="fixed inset-0 bg-black/50 z-40 md:hidden modal-backdrop"
                                 onClick={onClose}
-                            ></div>
+                            />
                         )}
-                        <div className={`fixed top-0 left-0 h-full w-64 bg-white z-40 transform transition-transform duration-300 md:hidden ${
-                            isOpen ? 'translate-x-0' : '-translate-x-full'
-                        }`}>
-                            <div className="h-full flex flex-col safe-top">
+                        <div className={`drawer-mobile bg-white md:hidden ${isOpen ? 'open' : ''}`}>
+                            <div className="h-full flex flex-col safe-top safe-bottom">
                                 {content}
                             </div>
                         </div>
@@ -1260,7 +1429,7 @@
 
             if (messages.length === 0) {
                 return (
-                    <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    <div className="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6">
                         <div className="text-center text-gray-500 text-xs md:text-sm">
                             <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
                             <p>All messages are encrypted and users are authenticated</p>
@@ -1270,7 +1439,7 @@
             }
 
             return (
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-3 md:space-y-4">
+                <div className="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6 space-y-3 md:space-y-4">
                     {messages.map(msg => {
                         let messageContent;
                         let messageClass = 'text-gray-700';
@@ -1342,7 +1511,7 @@
                         <button
                             type="submit"
                             disabled={loading || !message.trim()}
-                            className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all disabled:opacity-50"
+                            className="px-4 md:px-6 py-2 md:py-3 gradient-button text-white rounded-lg hover:opacity-90 transition-all disabled:opacity-50"
                         >
                             <i className="fas fa-paper-plane"></i>
                         </button>
@@ -1401,6 +1570,7 @@
 
         // Main App Component
         const App = () => {
+            useViewportFix();
             const { toasts, showToast } = useToast();
             const { api, sessionManager } = useAPI();
             
@@ -1718,7 +1888,7 @@
             };
 
             const cancelConnection = () => {
-                setCurrentView('sessions');
+                checkSavedSessions();
             };
 
             const showNewSession = () => {
@@ -1797,7 +1967,7 @@
                                         this.setState({ hasError: false, error: null });
                                         window.location.reload();
                                     }}
-                                    className="bg-gradient-to-r from-purple-500 to-pink-600 text-white py-2 px-4 rounded-lg text-sm md:text-base"
+                                    className="gradient-button text-white py-2 px-4 rounded-lg text-sm md:text-base"
                                 >
                                     Try Again
                                 </button>
