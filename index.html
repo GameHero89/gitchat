@@ -179,7 +179,8 @@
         
         /* Fix inputs on iOS */
         input[type="text"],
-        input[type="password"] {
+        input[type="password"],
+        textarea {
             -webkit-appearance: none;
             border-radius: 0.5rem;
         }
@@ -188,6 +189,37 @@
         button {
             -webkit-appearance: none;
             touch-action: manipulation;
+        }
+        
+        /* Fix radio buttons visibility */
+        input[type="radio"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            background-color: transparent;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        input[type="radio"]:checked {
+            background-color: white;
+            border-color: white;
+        }
+        
+        input[type="radio"]:checked::after {
+            content: '';
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background-color: #9333ea;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
         
         /* Prevent overscroll */
@@ -225,10 +257,141 @@
                     </div>
                 </div>
 
-                <!-- New Session Button -->
-                <button id="new-session-btn" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
-                    <i class="fas fa-plus mr-2"></i>
-                    Create New Session
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    <button id="new-session-btn" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
+                        <i class="fas fa-plus mr-2"></i>
+                        Create New Session
+                    </button>
+                    
+                    <button id="import-session-btn" class="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition-all flex items-center justify-center text-sm md:text-base">
+                        <i class="fas fa-download mr-2"></i>
+                        Import Shared Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Session Modal -->
+    <div id="import-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-download text-white text-xl md:text-2xl"></i>
+                </div>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Import Shared Session</h2>
+                <p class="text-sm md:text-base text-gray-600">Enter the encrypted data and key you received</p>
+            </div>
+
+            <form id="import-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Encrypted Session Data</label>
+                    <textarea id="import-data" placeholder="Paste the encrypted data here..." 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-32" required></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Decryption Key</label>
+                    <input type="password" id="import-key" placeholder="Enter the decryption key" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                </div>
+
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition-all">
+                        Import Session
+                    </button>
+                    <button type="button" id="cancel-import" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Share Session Modal -->
+    <div id="share-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-share-alt text-white text-xl md:text-2xl"></i>
+                </div>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Share Session Data</h2>
+                <p class="text-sm md:text-base text-gray-600">Create a secure key to encrypt your session data</p>
+            </div>
+
+            <form id="share-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Encryption Key for Sharing</label>
+                    <input type="password" id="share-key" placeholder="Create a strong key..." 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    <p class="text-xs text-gray-500 mt-1">Share this key separately and securely</p>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 transition-all">
+                    Generate Encrypted Data
+                </button>
+            </form>
+
+            <div id="share-result" class="hidden mt-6 space-y-4">
+                <div class="p-4 bg-green-50 rounded-lg">
+                    <h4 class="font-medium text-green-900 mb-2">Encrypted Session Data</h4>
+                    <div class="flex items-center space-x-2">
+                        <textarea id="shareable-data" readonly class="flex-1 px-3 py-2 bg-white border border-green-300 rounded text-sm h-32"></textarea>
+                    </div>
+                    <button id="copy-data-btn" class="mt-2 w-full px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                        <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                    </button>
+                </div>
+                
+                <p class="text-xs text-gray-600">
+                    <strong>Instructions:</strong><br>
+                    1. Copy the encrypted data above<br>
+                    2. Share it via any messaging app<br>
+                    3. Share the encryption key separately<br>
+                    4. Recipient uses "Import Shared Session" to connect
+                </p>
+            </div>
+
+            <button id="close-share" class="mt-4 w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Info Modal -->
+    <div id="key-info-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-key text-white text-xl md:text-2xl"></i>
+                </div>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Encryption Key Info</h2>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-4 bg-purple-50 rounded-lg">
+                    <h4 class="font-medium text-purple-900 mb-2">Current Encryption</h4>
+                    <p class="text-sm text-purple-700" id="current-encryption-method">Loading...</p>
+                </div>
+
+                <div id="key-share-section" class="hidden p-4 bg-yellow-50 rounded-lg">
+                    <h4 class="font-medium text-yellow-900 mb-2">Current Encryption Key</h4>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="shareable-key" readonly class="flex-1 px-3 py-2 bg-white border border-yellow-300 rounded text-sm">
+                        <button id="copy-key-btn" class="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-yellow-700 mt-2">This is the key being used for message encryption</p>
+                </div>
+
+                <button id="share-session-btn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all">
+                    <i class="fas fa-share-alt mr-2"></i>Share Session Data
+                </button>
+
+                <button id="close-key-info" class="w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-all">
+                    Close
                 </button>
             </div>
         </div>
@@ -406,6 +569,9 @@
                         <div id="online-indicator" class="w-2 h-2 bg-green-400 rounded-full pulse-online"></div>
                         <span id="online-users">0</span>
                     </div>
+                    <button id="key-info-btn" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                        <i class="fas fa-key"></i>
+                    </button>
                     <button id="sync-btn" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
                         <i id="sync-icon" class="fas fa-sync-alt"></i>
                     </button>
@@ -504,7 +670,7 @@
         const isAndroid = /android/i.test(navigator.userAgent);
         const isMobile = window.innerWidth < 768 || isIOS || isAndroid;
 
-        // [Keep all existing classes - Encryption, UserAuth, GitHubStorageAPI, GitHubSessionManager, GitHubChatAPI]
+        // [Keep all existing classes]
         // Encryption Helper Class
         class ChatEncryption {
             constructor() {
@@ -921,6 +1087,7 @@
                 
                 if (method === 'token') {
                     this.encryptionKey = await this.encryption.generateKey(token);
+                    this.customKeyString = null;
                 } else if (method === 'custom' && customKey) {
                     this.customKeyString = customKey;
                     this.encryptionKey = await this.encryption.generateKey(customKey);
@@ -1100,7 +1267,7 @@
             }
         }
 
-        // Enhanced Chat Application with Mobile Support
+        // Enhanced Chat Application with Share/Import functionality
         class ChatApp {
             constructor() {
                 this.api = new GitHubChatAPI();
@@ -1113,6 +1280,7 @@
                 this.currentSessionId = null;
                 this.isConnecting = false;
                 this.pendingSession = null;
+                this.currentSessionData = null;
                 
                 this.init();
             }
@@ -1157,6 +1325,54 @@
                     this.showConnectionModal();
                 });
 
+                // Import session
+                document.getElementById('import-session-btn').addEventListener('click', () => {
+                    this.showImportModal();
+                });
+
+                // Import form
+                document.getElementById('import-form').addEventListener('submit', this.handleImportSession.bind(this));
+                document.getElementById('cancel-import').addEventListener('click', () => {
+                    document.getElementById('import-modal').classList.add('hidden');
+                    document.getElementById('session-modal').classList.remove('hidden');
+                });
+
+                // Share form
+                document.getElementById('share-form').addEventListener('submit', this.handleShareSession.bind(this));
+                document.getElementById('close-share').addEventListener('click', () => {
+                    document.getElementById('share-modal').classList.add('hidden');
+                    document.getElementById('share-result').classList.add('hidden');
+                });
+
+                // Copy data button
+                document.getElementById('copy-data-btn').addEventListener('click', () => {
+                    const textarea = document.getElementById('shareable-data');
+                    textarea.select();
+                    document.execCommand('copy');
+                    this.showToast('Encrypted data copied to clipboard!', 'success');
+                });
+
+                // Key info modal
+                document.getElementById('key-info-btn').addEventListener('click', () => {
+                    this.showKeyInfo();
+                });
+
+                document.getElementById('share-session-btn').addEventListener('click', () => {
+                    document.getElementById('key-info-modal').classList.add('hidden');
+                    this.showShareModal();
+                });
+
+                document.getElementById('close-key-info').addEventListener('click', () => {
+                    document.getElementById('key-info-modal').classList.add('hidden');
+                });
+
+                document.getElementById('copy-key-btn').addEventListener('click', () => {
+                    const input = document.getElementById('shareable-key');
+                    input.select();
+                    document.execCommand('copy');
+                    this.showToast('Encryption key copied to clipboard!', 'success');
+                });
+
                 // Encryption method change
                 document.querySelectorAll('input[name="encryption-method"]').forEach(radio => {
                     radio.addEventListener('change', (e) => {
@@ -1198,7 +1414,7 @@
                     }
                 });
 
-                // Enhanced page visibility handling
+                // Page visibility handling
                 document.addEventListener('visibilitychange', () => {
                     this.api.setPageVisibility(!document.hidden);
                     
@@ -1218,6 +1434,139 @@
                 });
             }
 
+            showImportModal() {
+                document.getElementById('session-modal').classList.add('hidden');
+                document.getElementById('import-modal').classList.remove('hidden');
+            }
+
+            showShareModal() {
+                if (!this.currentSessionData) {
+                    this.showToast('No active session to share', 'error');
+                    return;
+                }
+                document.getElementById('share-modal').classList.remove('hidden');
+            }
+
+            showKeyInfo() {
+                if (!this.api.isConnected) {
+                    this.showToast('Not connected to any chat', 'error');
+                    return;
+                }
+
+                const methodText = this.api.encryptionMethod === 'token' 
+                    ? 'GitHub Token (automatic)' 
+                    : 'Custom Key';
+                
+                document.getElementById('current-encryption-method').textContent = methodText;
+                
+                if (this.api.customKeyString) {
+                    document.getElementById('key-share-section').classList.remove('hidden');
+                    document.getElementById('shareable-key').value = this.api.customKeyString;
+                } else {
+                    document.getElementById('key-share-section').classList.add('hidden');
+                }
+                
+                document.getElementById('key-info-modal').classList.remove('hidden');
+            }
+
+            async handleImportSession(e) {
+                e.preventDefault();
+                
+                const encryptedData = document.getElementById('import-data').value.trim();
+                const decryptionKey = document.getElementById('import-key').value.trim();
+                
+                if (!encryptedData || !decryptionKey) {
+                    this.showToast('Please provide both encrypted data and decryption key', 'error');
+                    return;
+                }
+                
+                try {
+                    const encryption = new ChatEncryption();
+                    const key = await encryption.generateKey(decryptionKey);
+                    const decryptedJson = await encryption.decrypt(encryptedData, key);
+                    
+                    if (!decryptedJson) {
+                        throw new Error('Failed to decrypt data - wrong key?');
+                    }
+                    
+                    const sessionData = JSON.parse(decryptedJson);
+                    
+                    // Store imported session temporarily
+                    this.pendingSession = sessionData;
+                    
+                    // Hide import modal and show connection modal with pre-filled data
+                    document.getElementById('import-modal').classList.add('hidden');
+                    this.showConnectionModalWithData(sessionData);
+                    
+                    this.showToast('Session data imported successfully! Please enter your username and password.', 'success');
+                    
+                } catch (error) {
+                    console.error('Import error:', error);
+                    this.showToast('Failed to import session: ' + error.message, 'error');
+                }
+            }
+
+            async handleShareSession(e) {
+                e.preventDefault();
+                
+                const shareKey = document.getElementById('share-key').value.trim();
+                
+                if (!shareKey) {
+                    this.showToast('Please provide an encryption key', 'error');
+                    return;
+                }
+                
+                if (!this.currentSessionData) {
+                    this.showToast('No active session to share', 'error');
+                    return;
+                }
+                
+                try {
+                    const encryption = new ChatEncryption();
+                    const key = await encryption.generateKey(shareKey);
+                    const dataToShare = {
+                        owner: this.currentSessionData.owner,
+                        repo: this.currentSessionData.repo,
+                        token: this.currentSessionData.token,
+                        encryptionMethod: this.currentSessionData.encryptionMethod,
+                        customKey: this.currentSessionData.customKey || null
+                    };
+                    
+                    const encryptedData = await encryption.encrypt(JSON.stringify(dataToShare), key);
+                    
+                    document.getElementById('shareable-data').value = encryptedData;
+                    document.getElementById('share-result').classList.remove('hidden');
+                    
+                    this.showToast('Session data encrypted! Share it along with the key.', 'success');
+                    
+                } catch (error) {
+                    console.error('Share error:', error);
+                    this.showToast('Failed to encrypt session data: ' + error.message, 'error');
+                }
+            }
+
+            showConnectionModalWithData(sessionData) {
+                document.getElementById('repo-owner').value = sessionData.owner || '';
+                document.getElementById('repo-name').value = sessionData.repo || '';
+                document.getElementById('github-token').value = sessionData.token || '';
+                
+                const encryptionRadios = document.querySelectorAll('input[name="encryption-method"]');
+                encryptionRadios.forEach(radio => {
+                    if (radio.value === sessionData.encryptionMethod) {
+                        radio.checked = true;
+                    }
+                });
+                
+                if (sessionData.encryptionMethod === 'custom' && sessionData.customKey) {
+                    document.getElementById('custom-key-section').classList.remove('hidden');
+                    document.getElementById('custom-encryption-key').value = sessionData.customKey;
+                } else {
+                    document.getElementById('custom-key-section').classList.add('hidden');
+                }
+                
+                document.getElementById('connection-modal').classList.remove('hidden');
+            }
+
             async checkSavedSessions() {
                 document.getElementById('sessions-loading').classList.remove('hidden');
                 
@@ -1226,7 +1575,8 @@
                 document.getElementById('sessions-loading').classList.add('hidden');
                 
                 if (validSessions.length === 0) {
-                    this.showConnectionModal();
+                    // Don't auto-show connection modal, let user choose
+                    document.getElementById('saved-sessions-container').classList.add('hidden');
                 } else {
                     this.showSessionSelection(validSessions);
                 }
@@ -1316,6 +1666,7 @@
 
                     this.username = this.pendingSession.username;
                     this.currentSessionId = this.pendingSession.sessionId;
+                    this.currentSessionData = this.pendingSession;
 
                     document.getElementById('password-modal').classList.add('hidden');
                     this.showChatInterface();
@@ -1363,6 +1714,9 @@
             hideConnectionModal() {
                 document.getElementById('connection-modal').classList.add('hidden');
                 document.getElementById('session-modal').classList.remove('hidden');
+                // Reset form
+                document.getElementById('connection-form').reset();
+                document.getElementById('custom-key-section').classList.add('hidden');
             }
 
             hideSessionModal() {
@@ -1432,6 +1786,11 @@
                     this.currentSessionId = this.sessionManager.saveSession(
                         username, owner, repo, token, encryptionMethod, customKey
                     );
+                    
+                    // Store session data for sharing
+                    this.currentSessionData = {
+                        owner, repo, token, encryptionMethod, customKey
+                    };
                     
                     document.getElementById('connection-modal').classList.add('hidden');
                     this.showChatInterface();
@@ -1662,6 +2021,7 @@
                 this.lastMessageTime = null;
                 this.currentSessionId = null;
                 this.pendingSession = null;
+                this.currentSessionData = null;
                 
                 document.getElementById('chat-interface').classList.add('hidden');
                 document.getElementById('connection-form').reset();
