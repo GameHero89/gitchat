@@ -226,6 +226,57 @@
         .prevent-overscroll {
             overscroll-behavior: contain;
         }
+        
+        /* Panic button styles */
+        .panic-button {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            transition: all 0.3s ease;
+            animation: subtle-pulse 3s infinite;
+        }
+        
+        .panic-button:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        @keyframes subtle-pulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; }
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: inline-block;
+            padding: 0 12px;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background-color: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
     </style>
 </head>
 <body class="h-full-ios bg-gray-50 prevent-overscroll">
@@ -261,7 +312,7 @@
                 <div class="space-y-3">
                     <button id="new-session-btn" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
                         <i class="fas fa-plus mr-2"></i>
-                        Create New Session
+                        Create or Join Chat
                     </button>
                     
                     <button id="import-session-btn" class="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition-all flex items-center justify-center text-sm md:text-base">
@@ -269,6 +320,45 @@
                         Import Shared Session
                     </button>
                 </div>
+                
+                <!-- Panic Button -->
+                <div class="mt-8 pt-4 border-t border-gray-200">
+                    <button id="panic-button" class="w-full panic-button text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center text-sm md:text-base">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Emergency Data Wipe
+                    </button>
+                    <p class="text-xs text-gray-500 text-center mt-2">⚠️ Deletes all local data immediately</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panic Confirmation Modal -->
+    <div id="panic-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                </div>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Emergency Data Wipe</h2>
+                <p class="text-sm md:text-base text-gray-600">Are you sure? This will:</p>
+                <ul class="text-sm text-gray-700 mt-3 text-left">
+                    <li class="mb-1">• Send an emergency notification to the chat</li>
+                    <li class="mb-1">• Delete all saved sessions</li>
+                    <li class="mb-1">• Clear all local storage data</li>
+                    <li class="mb-1">• Remove all authentication data</li>
+                </ul>
+                <p class="text-sm text-red-600 font-semibold mt-3">This action cannot be undone!</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button id="confirm-panic" class="flex-1 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-all">
+                    <i class="fas fa-trash-alt mr-2"></i>
+                    Yes, Delete Everything
+                </button>
+                <button id="cancel-panic" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all">
+                    Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -438,7 +528,7 @@
                     <div class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                         <i class="fas fa-user-shield text-white text-xl md:text-2xl"></i>
                     </div>
-                    <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">Create Authenticated Chat</h2>
+                    <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">Create or Join Authenticated Chat</h2>
                     <p class="text-sm md:text-base text-gray-600">Setup secure messaging</p>
                 </div>
             </div>
@@ -526,7 +616,7 @@
                 <form id="connection-form">
                     <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                         <button type="submit" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
-                            <span id="connect-text">Create Chat</span>
+                            <span id="connect-text">Create or Join Chat</span>
                             <i id="connect-spinner" class="fas fa-spinner spinner ml-2 hidden"></i>
                         </button>
                         <button type="button" id="cancel-connection" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm md:text-base">
@@ -627,6 +717,18 @@
                     <div class="text-center text-gray-500 text-xs md:text-sm">
                         <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
                         <p>All messages are encrypted and users are authenticated</p>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator -->
+                <div id="typing-indicator-container" class="px-4 md:px-6 hidden">
+                    <div class="flex items-center space-x-2 text-gray-500 text-sm">
+                        <span id="typing-users"></span>
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
                     </div>
                 </div>
 
@@ -803,8 +905,10 @@
                 this.baseURL = 'https://api.github.com';
                 this.branch = 'main';
                 this.isConnected = false;
-                this.rateLimitDelay = 50;
+                this.rateLimitDelay = 100; // Increased delay
                 this.lastRequestTime = 0;
+                this.maxRetries = 3;
+                this.retryDelay = 1000;
             }
 
             async connect(owner, repo, token) {
@@ -831,7 +935,7 @@
                 }
             }
 
-            async makeRequest(endpoint, options = {}) {
+            async makeRequest(endpoint, options = {}, retryCount = 0) {
                 const now = Date.now();
                 const timeSinceLastRequest = now - this.lastRequestTime;
                 if (timeSinceLastRequest < this.rateLimitDelay) {
@@ -848,7 +952,26 @@
                     }
                 };
 
-                return fetch(url, { ...defaultOptions, ...options });
+                const response = await fetch(url, { ...defaultOptions, ...options });
+
+                // Handle rate limiting
+                if (response.status === 403 || response.status === 429) {
+                    const resetTime = response.headers.get('X-RateLimit-Reset');
+                    const waitTime = resetTime ? (parseInt(resetTime) * 1000 - Date.now()) : 60000;
+                    console.warn(`Rate limited. Waiting ${Math.ceil(waitTime / 1000)} seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 60000)));
+                    return this.makeRequest(endpoint, options, retryCount);
+                }
+
+                // Retry on 409 (conflict) with exponential backoff
+                if (response.status === 409 && retryCount < this.maxRetries) {
+                    const delay = this.retryDelay * Math.pow(2, retryCount);
+                    console.warn(`Conflict detected. Retrying in ${delay}ms... (attempt ${retryCount + 1}/${this.maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return this.makeRequest(endpoint, options, retryCount + 1);
+                }
+
+                return response;
             }
 
             async getFile(path) {
@@ -867,6 +990,16 @@
             }
 
             async saveFile(path, data, sha = null, commitMessage = null) {
+                // Always get latest SHA before updating to avoid conflicts
+                if (sha === null) {
+                    try {
+                        const existing = await this.getFile(path);
+                        sha = existing.sha;
+                    } catch (error) {
+                        // File doesn't exist yet
+                    }
+                }
+
                 const content = btoa(JSON.stringify(data, null, 2));
                 const body = {
                     message: commitMessage || `Update ${path}`,
@@ -883,7 +1016,7 @@
                     body: JSON.stringify(body)
                 });
                 
-                if (!response.ok) {
+                if (!response.ok && response.status !== 409) {
                     throw new Error(`Failed to save file: ${path} (${response.status})`);
                 }
                 
@@ -943,6 +1076,7 @@
         class GitHubSessionManager {
             constructor() {
                 this.storageKey = 'github_sessions_auth';
+                this.lastUserKey = 'github_last_user';
             }
 
             encodeData(data) {
@@ -967,6 +1101,14 @@
                 
                 const decoded = this.decodeData(encoded);
                 return Array.isArray(decoded) ? decoded : [];
+            }
+
+            getLastUsername() {
+                return localStorage.getItem(this.lastUserKey) || 'Unknown User';
+            }
+
+            setLastUsername(username) {
+                localStorage.setItem(this.lastUserKey, username);
             }
 
             saveSession(username, owner, repo, token, encryptionMethod, customKey = null) {
@@ -995,6 +1137,7 @@
                     .slice(0, 10);
                 
                 localStorage.setItem(this.storageKey, this.encodeData(recentSessions));
+                this.setLastUsername(username);
                 return sessionId;
             }
 
@@ -1005,6 +1148,7 @@
                 if (session) {
                     session.lastUsed = new Date().toISOString();
                     localStorage.setItem(this.storageKey, this.encodeData(sessions));
+                    this.setLastUsername(session.username);
                     
                     return {
                         ...session,
@@ -1045,6 +1189,17 @@
             clearAllSessions() {
                 localStorage.removeItem(this.storageKey);
             }
+
+            clearAllData() {
+                // Clear everything from localStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies if any
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+            }
         }
 
         // Enhanced Chat API with better heartbeat
@@ -1063,12 +1218,13 @@
                 this.customKeyString = null;
                 this.authenticatedUser = null;
                 this.isPageVisible = !document.hidden;
+                this.typingTimer = null;
+                this.typingTimeout = 3000;
             }
 
             async initializeChat() {
                 const structure = {
                     'chat/messages.json': [],
-                    'chat/heartbeats.json': {},
                     'chat/user-auth.json': {},
                     'chat/rooms.json': ['general'],
                     'chat/metadata.json': {
@@ -1080,6 +1236,15 @@
                 };
 
                 await this.initializeStructure(structure);
+                
+                // Create heartbeats directory structure
+                try {
+                    await this.getData('chat/heartbeats/README.md');
+                } catch (error) {
+                    await this.setData('chat/heartbeats/README.md', 
+                        '# Heartbeats\nThis directory contains individual heartbeat files for each user.', 
+                        'Initialize heartbeats directory');
+                }
             }
 
             async setupEncryption(method, token, customKey = null) {
@@ -1106,12 +1271,12 @@
                 return authResult;
             }
 
-            async sendMessage(username, message, room = 'general') {
-                if (!this.isConnected || !this.encryptionKey || !this.authenticatedUser) {
+            async sendMessage(username, message, room = 'general', isSystemMessage = false) {
+                if (!this.isConnected || !this.encryptionKey || (!isSystemMessage && !this.authenticatedUser)) {
                     throw new Error('Not connected, encryption not setup, or user not authenticated');
                 }
 
-                if (this.authenticatedUser.username !== username) {
+                if (!isSystemMessage && this.authenticatedUser.username !== username) {
                     throw new Error('Username mismatch with authenticated user');
                 }
 
@@ -1123,14 +1288,18 @@
                     username,
                     message: encryptedMessage,
                     encrypted: true,
-                    authenticated: true,
+                    authenticated: !isSystemMessage,
+                    isSystem: isSystemMessage,
                     room,
                     timestamp: new Date().toISOString(),
-                    avatar: this.authenticatedUser.avatar
+                    avatar: isSystemMessage ? 
+                        'https://api.dicebear.com/7.x/bottts/svg?seed=system' : 
+                        (this.authenticatedUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`)
                 };
 
                 messages.push(newMessage);
-                await this.setData('chat/messages.json', messages, `Authenticated encrypted message from ${username}`);
+                await this.setData('chat/messages.json', messages, 
+                    isSystemMessage ? `System message: ${username}` : `Authenticated encrypted message from ${username}`);
                 
                 return newMessage;
             }
@@ -1153,20 +1322,25 @@
                 return filteredMessages;
             }
 
-            async sendHeartbeat(username) {
+            async sendHeartbeat(username, isTyping = false) {
                 if (!this.isConnected || !this.sessionId || !this.authenticatedUser || !this.isPageVisible) return;
 
-                const heartbeats = await this.getData('chat/heartbeats.json') || {};
+                const heartbeatPath = `chat/heartbeats/${username}.json`;
                 
-                heartbeats[this.sessionId] = {
+                const heartbeatData = {
                     username,
                     timestamp: new Date().toISOString(),
                     avatar: this.authenticatedUser.avatar,
                     authenticated: true,
-                    tabId: this.sessionId
+                    sessionId: this.sessionId,
+                    isTyping: isTyping
                 };
 
-                await this.setData('chat/heartbeats.json', heartbeats);
+                await this.setData(heartbeatPath, heartbeatData, `Update heartbeat for ${username}`);
+            }
+
+            async setTypingStatus(username, isTyping) {
+                await this.sendHeartbeat(username, isTyping);
             }
 
             async joinRoom(username) {
@@ -1187,35 +1361,52 @@
             }
 
             async getUsers() {
-                const heartbeats = await this.getData('chat/heartbeats.json') || {};
+                // Get all heartbeat files
+                const heartbeatsDir = await this.getData('chat/heartbeats') || [];
                 const now = new Date();
                 const timeoutMs = this.userTimeoutSeconds * 1000;
-
                 const activeUsers = [];
-                const expiredSessions = [];
 
-                for (const [sessionId, data] of Object.entries(heartbeats)) {
-                    const lastSeen = new Date(data.timestamp);
-                    const isOnline = (now - lastSeen) < timeoutMs;
-
-                    if (isOnline) {
-                        activeUsers.push({
-                            username: data.username,
-                            sessionId: sessionId,
-                            avatar: data.avatar,
-                            lastSeen: data.timestamp,
-                            status: 'online',
-                            authenticated: data.authenticated || false
-                        });
-                    } else {
-                        expiredSessions.push(sessionId);
+                // Try to read each user's heartbeat file
+                const userFiles = [];
+                try {
+                    const response = await this.makeRequest(`/repos/${this.owner}/${this.repo}/contents/chat/heartbeats`);
+                    if (response.ok) {
+                        const files = await response.json();
+                        for (const file of files) {
+                            if (file.name.endsWith('.json') && file.name !== 'README.md') {
+                                userFiles.push(file.name);
+                            }
+                        }
                     }
+                } catch (error) {
+                    console.error('Error listing heartbeat files:', error);
                 }
 
-                if (expiredSessions.length > 0) {
-                    const cleanedHeartbeats = { ...heartbeats };
-                    expiredSessions.forEach(sessionId => delete cleanedHeartbeats[sessionId]);
-                    await this.setData('chat/heartbeats.json', cleanedHeartbeats);
+                for (const filename of userFiles) {
+                    try {
+                        const username = filename.replace('.json', '');
+                        const heartbeatData = await this.getData(`chat/heartbeats/${filename}`);
+                        
+                        if (heartbeatData) {
+                            const lastSeen = new Date(heartbeatData.timestamp);
+                            const isOnline = (now - lastSeen) < timeoutMs;
+
+                            if (isOnline) {
+                                activeUsers.push({
+                                    username: heartbeatData.username,
+                                    sessionId: heartbeatData.sessionId,
+                                    avatar: heartbeatData.avatar,
+                                    lastSeen: heartbeatData.timestamp,
+                                    status: 'online',
+                                    authenticated: heartbeatData.authenticated || false,
+                                    isTyping: heartbeatData.isTyping || false
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        // Ignore individual file errors
+                    }
                 }
 
                 return activeUsers;
@@ -1227,7 +1418,7 @@
                 
                 this.heartbeatTimer = setInterval(() => {
                     if (this.isPageVisible) {
-                        this.sendHeartbeat(username).catch(console.error);
+                        this.sendHeartbeat(username, false).catch(console.error);
                     }
                 }, this.heartbeatInterval);
             }
@@ -1247,9 +1438,12 @@
                 if (!this.sessionId) return;
 
                 try {
-                    const heartbeats = await this.getData('chat/heartbeats.json') || {};
-                    delete heartbeats[this.sessionId];
-                    await this.setData('chat/heartbeats.json', heartbeats);
+                    // Remove user's heartbeat file
+                    const heartbeatPath = `chat/heartbeats/${username}.json`;
+                    const response = await this.makeRequest(
+                        `/repos/${this.owner}/${this.repo}/contents/${heartbeatPath}`,
+                        { method: 'DELETE' }
+                    );
                 } catch (error) {
                     console.error('Error leaving room:', error);
                 }
@@ -1281,6 +1475,8 @@
                 this.isConnecting = false;
                 this.pendingSession = null;
                 this.currentSessionData = null;
+                this.typingTimer = null;
+                this.lastTypingState = false;
                 
                 this.init();
             }
@@ -1328,6 +1524,19 @@
                 // Import session
                 document.getElementById('import-session-btn').addEventListener('click', () => {
                     this.showImportModal();
+                });
+
+                // Panic Button
+                document.getElementById('panic-button').addEventListener('click', () => {
+                    this.showPanicModal();
+                });
+
+                document.getElementById('confirm-panic').addEventListener('click', () => {
+                    this.handlePanicButton();
+                });
+
+                document.getElementById('cancel-panic').addEventListener('click', () => {
+                    document.getElementById('panic-modal').classList.add('hidden');
                 });
 
                 // Import form
@@ -1406,8 +1615,14 @@
                 // Sync button
                 document.getElementById('sync-btn').addEventListener('click', this.syncData.bind(this));
 
+                // Message input typing detection
+                const messageInput = document.getElementById('message-input');
+                messageInput.addEventListener('input', () => {
+                    this.handleTyping();
+                });
+
                 // Enter key in message input
-                document.getElementById('message-input').addEventListener('keypress', (e) => {
+                messageInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         this.handleSendMessage(e);
@@ -1432,6 +1647,85 @@
                         this.api.leaveRoom(this.username);
                     }
                 });
+            }
+
+            handleTyping() {
+                if (!this.username || !this.api.isConnected) return;
+
+                // Set typing status
+                if (!this.lastTypingState) {
+                    this.lastTypingState = true;
+                    this.api.setTypingStatus(this.username, true);
+                }
+
+                // Clear existing timer
+                if (this.typingTimer) {
+                    clearTimeout(this.typingTimer);
+                }
+
+                // Set new timer to clear typing status
+                this.typingTimer = setTimeout(() => {
+                    this.lastTypingState = false;
+                    this.api.setTypingStatus(this.username, false);
+                }, this.api.typingTimeout);
+            }
+
+            showPanicModal() {
+                document.getElementById('panic-modal').classList.remove('hidden');
+            }
+
+            async handlePanicButton() {
+                const lastUsername = this.sessionManager.getLastUsername();
+                
+                // Try to send panic message if there's an active session
+                if (this.api.isConnected && this.api.encryptionKey) {
+                    try {
+                        await this.api.sendMessage(
+                            'SYSTEM', 
+                            `⚠️ EMERGENCY: User "${lastUsername}" has triggered the panic button and wiped all local data!`,
+                            'general',
+                            true // isSystemMessage
+                        );
+                    } catch (error) {
+                        console.error('Could not send panic message:', error);
+                    }
+                } else {
+                    // Try to find and connect to the last used session to send the message
+                    const sessions = this.sessionManager.getSessions();
+                    if (sessions.length > 0) {
+                        const lastSession = sessions[0]; // Most recent session
+                        try {
+                            const tempApi = new GitHubChatAPI();
+                            await tempApi.connect(lastSession.owner, lastSession.repo, this.sessionManager.decodeData(lastSession.token));
+                            await tempApi.setupEncryption(
+                                lastSession.encryptionMethod, 
+                                this.sessionManager.decodeData(lastSession.token), 
+                                lastSession.customKey ? this.sessionManager.decodeData(lastSession.customKey) : null
+                            );
+                            
+                            await tempApi.sendMessage(
+                                'SYSTEM',
+                                `⚠️ EMERGENCY: User "${lastUsername}" has triggered the panic button and wiped all local data!`,
+                                'general',
+                                true // isSystemMessage
+                            );
+                            
+                            tempApi.disconnect();
+                        } catch (error) {
+                            console.error('Could not send panic message:', error);
+                        }
+                    }
+                }
+
+                // Clear all data
+                this.sessionManager.clearAllData();
+                
+                // Show toast and reload
+                this.showToast('🚨 All local data has been wiped!', 'warning');
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             }
 
             showImportModal() {
@@ -1820,6 +2114,13 @@
                 const message = input.value.trim();
                 
                 if (!message) return;
+
+                // Clear typing status
+                if (this.typingTimer) {
+                    clearTimeout(this.typingTimer);
+                    this.lastTypingState = false;
+                    this.api.setTypingStatus(this.username, false);
+                }
                 
                 try {
                     await this.api.sendMessage(this.username, message, this.currentRoom);
@@ -1848,8 +2149,30 @@
                 try {
                     const users = await this.api.getUsers();
                     this.renderUsers(users);
+                    this.updateTypingIndicator(users);
                 } catch (error) {
                     console.error('Load users error:', error);
+                }
+            }
+
+            updateTypingIndicator(users) {
+                const typingUsers = users.filter(u => u.isTyping && u.username !== this.username);
+                const container = document.getElementById('typing-indicator-container');
+                const typingUsersElement = document.getElementById('typing-users');
+                
+                if (typingUsers.length > 0) {
+                    container.classList.remove('hidden');
+                    const names = typingUsers.map(u => u.username);
+                    
+                    if (names.length === 1) {
+                        typingUsersElement.textContent = `${names[0]} is typing`;
+                    } else if (names.length === 2) {
+                        typingUsersElement.textContent = `${names[0]} and ${names[1]} are typing`;
+                    } else {
+                        typingUsersElement.textContent = `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} are typing`;
+                    }
+                } else {
+                    container.classList.add('hidden');
                 }
             }
 
@@ -1878,6 +2201,22 @@
                             }
                         } else {
                             messageContent = this.escapeHtml(msg.message);
+                        }
+
+                        // Style system messages differently
+                        if (msg.isSystem) {
+                            return `
+                                <div class="flex space-x-2 md:space-x-3 message-animation p-3 bg-red-50 rounded-lg border border-red-200">
+                                    <img src="${msg.avatar}" alt="${msg.username}" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-semibold text-red-700 text-sm md:text-base">SYSTEM ALERT</span>
+                                            <span class="text-xs md:text-sm text-red-600">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                        </div>
+                                        <div class="text-red-700 mt-1 message-content text-sm md:text-base font-medium">${messageContent}</div>
+                                    </div>
+                                </div>
+                            `;
                         }
 
                         return `
@@ -1927,6 +2266,7 @@
                             </div>
                             <div class="text-xs text-gray-500">
                                 ${user.username === this.username ? 'You' : 'Online'}
+                                ${user.isTyping && user.username !== this.username ? ' • typing...' : ''}
                             </div>
                         </div>
                     </div>
@@ -1958,10 +2298,8 @@
                                 this.lastMessageTime = latestTimestamp;
                             }
                         }
-                        document.getElementById('connection-status').className = 'w-2 h-2 bg-green-400 rounded-full';
                     } catch (error) {
                         console.error('Message polling error:', error);
-                        document.getElementById('connection-status').className = 'w-2 h-2 bg-red-400 rounded-full';
                     }
                 }, this.api.pollInterval);
 
