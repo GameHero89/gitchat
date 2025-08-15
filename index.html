@@ -2,11 +2,96 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#9333ea">
     <title>GitHub Chat - Encrypted & Authenticated</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <style>
+        /* Cross-platform fixes */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        /* Allow text selection in inputs */
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        /* Custom viewport height */
+        :root {
+            --vh: 1vh;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+        }
+        
+        /* Prevent iOS zoom on input focus */
+        input, textarea, select {
+            font-size: 16px !important;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 0;
+        }
+        
+        /* Fix height for mobile */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .h-full-ios {
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+        }
+        
+        /* Safe areas */
+        .safe-top {
+            padding-top: var(--safe-top);
+        }
+        
+        .safe-bottom {
+            padding-bottom: var(--safe-bottom);
+        }
+        
+        .safe-left {
+            padding-left: var(--safe-left);
+        }
+        
+        .safe-right {
+            padding-right: var(--safe-right);
+        }
+        
+        /* Scrolling improvements */
+        .scroll-smooth {
+            -webkit-overflow-scrolling: touch;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+        }
+        
+        /* Hide scrollbar on mobile */
+        @media (max-width: 768px) {
+            .hide-scrollbar {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+        }
+        
+        /* Animations */
         .message-animation {
             animation: slideInUp 0.3s ease-out;
         }
@@ -35,9 +120,11 @@
             transition: all 0.2s ease;
         }
 
-        .session-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        @media (hover: hover) {
+            .session-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            }
         }
 
         .pulse-online {
@@ -52,34 +139,78 @@
         .message-content {
             word-wrap: break-word;
             white-space: pre-wrap;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .encryption-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
         .auth-section {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: -webkit-linear-gradient(315deg, #f093fb 0%, #f5576c 100%);
             color: white;
+        }
+        
+        /* Mobile drawer */
+        .mobile-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 16rem;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            z-index: 40;
+        }
+        
+        .mobile-drawer.open {
+            transform: translateX(0);
+        }
+        
+        /* Modal backdrop */
+        .modal-backdrop {
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        
+        /* Fix inputs on iOS */
+        input[type="text"],
+        input[type="password"] {
+            -webkit-appearance: none;
+            border-radius: 0.5rem;
+        }
+        
+        /* Fix button styles */
+        button {
+            -webkit-appearance: none;
+            touch-action: manipulation;
+        }
+        
+        /* Prevent overscroll */
+        .prevent-overscroll {
+            overscroll-behavior: contain;
         }
     </style>
 </head>
-<body class="h-full bg-gray-50">
+<body class="h-full-ios bg-gray-50 prevent-overscroll">
     <!-- Session Selection Modal -->
-    <div id="session-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
-            <div class="p-8 border-b border-gray-200">
+    <div id="session-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-gray-200">
                 <div class="text-center">
-                    <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-user-shield text-white text-3xl"></i>
+                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user-shield text-white text-2xl md:text-3xl"></i>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">GitHub Chat - Authenticated</h1>
-                    <p class="text-gray-600">Secure messaging with user authentication</p>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">GitHub Chat</h1>
+                    <p class="text-sm md:text-base text-gray-600">Secure messaging with user authentication</p>
                 </div>
             </div>
 
-            <div class="p-6 overflow-y-auto max-h-96">
+            <div class="p-4 md:p-6 scroll-smooth hide-scrollbar max-h-96">
                 <!-- Loading Indicator -->
                 <div id="sessions-loading" class="text-center py-8">
                     <i class="fas fa-spinner spinner text-gray-400 text-2xl mb-4"></i>
@@ -88,46 +219,46 @@
 
                 <!-- Saved Sessions -->
                 <div id="saved-sessions-container" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Saved Sessions</h3>
+                    <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-4">Saved Sessions</h3>
                     <div id="saved-sessions" class="space-y-3 mb-6">
                         <!-- Sessions will be populated here -->
                     </div>
                 </div>
 
                 <!-- New Session Button -->
-                <button id="new-session-btn" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center">
+                <button id="new-session-btn" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
                     <i class="fas fa-plus mr-2"></i>
-                    Create New Authenticated Session
+                    Create New Session
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Password Input Modal -->
-    <div id="password-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8">
-            <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-lock text-white text-2xl"></i>
+    <div id="password-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+            <div class="text-center mb-6 md:mb-8">
+                <div class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-white text-xl md:text-2xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Enter Password</h2>
-                <p class="text-gray-600">Enter your password to access this chat session</p>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">Enter Password</h2>
+                <p class="text-sm md:text-base text-gray-600">Enter your password to access this chat session</p>
                 <p class="text-sm text-purple-600 mt-2" id="session-username">Username: loading...</p>
             </div>
 
-            <form id="password-form" class="space-y-6">
+            <form id="password-form" class="space-y-4 md:space-y-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
                     <input type="password" id="session-password" placeholder="Enter your password" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
                 </div>
 
-                <div class="flex space-x-3">
-                    <button type="submit" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
                         <span id="auth-text">Authenticate</span>
                         <i id="auth-spinner" class="fas fa-spinner spinner ml-2 hidden"></i>
                     </button>
-                    <button type="button" id="cancel-password" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all">
+                    <button type="button" id="cancel-password" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm md:text-base">
                         Cancel
                     </button>
                 </div>
@@ -135,109 +266,107 @@
         </div>
     </div>
 
-    <!-- Connection Modal with FIXED Scrolling -->
-    <div id="connection-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 max-h-[95vh] flex flex-col overflow-hidden">
+    <!-- Connection Modal -->
+    <div id="connection-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden modal-backdrop">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
             <!-- Fixed Header -->
-            <div class="p-6 border-b border-gray-200 flex-shrink-0">
+            <div class="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
                 <div class="text-center">
-                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-user-shield text-white text-2xl"></i>
+                    <div class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                        <i class="fas fa-user-shield text-white text-xl md:text-2xl"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Create Authenticated Chat</h2>
-                    <p class="text-gray-600">Setup secure messaging with user authentication</p>
+                    <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">Create Authenticated Chat</h2>
+                    <p class="text-sm md:text-base text-gray-600">Setup secure messaging</p>
                 </div>
             </div>
 
             <!-- Scrollable Content -->
-            <div class="flex-1 overflow-y-auto">
-                <div class="p-6 space-y-6">
+            <div class="flex-1 scroll-smooth hide-scrollbar">
+                <div class="p-4 md:p-6 space-y-4 md:space-y-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Repository Owner</label>
                         <input type="text" id="repo-owner" placeholder="username or organization" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                               class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Repository Name</label>
                         <input type="text" id="repo-name" placeholder="chat-repo" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                               class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Personal Access Token</label>
                         <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
+                               class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" required>
                         <p class="text-xs text-gray-500 mt-1">
-                            <a href="https://github.com/settings/tokens" target="_blank" class="text-purple-600 hover:underline">Create a token with repo permissions</a>
+                            <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" class="text-purple-600 hover:underline">Create a token</a>
                         </p>
                     </div>
 
                     <!-- User Authentication -->
-                    <div class="auth-section p-4 rounded-lg">
-                        <h4 class="font-medium mb-4 flex items-center">
+                    <div class="auth-section p-3 md:p-4 rounded-lg">
+                        <h4 class="font-medium mb-3 md:mb-4 flex items-center text-sm md:text-base">
                             <i class="fas fa-user-lock mr-2"></i>
                             User Authentication
                         </h4>
                         
-                        <div class="space-y-4">
+                        <div class="space-y-3 md:space-y-4">
                             <div>
-                                <label class="block text-sm font-medium mb-2">Username</label>
+                                <label class="block text-sm font-medium mb-1 md:mb-2">Username</label>
                                 <input type="text" id="username" placeholder="Your unique username" 
                                        class="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50" required>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-2">Password</label>
+                                <label class="block text-sm font-medium mb-1 md:mb-2">Password</label>
                                 <input type="password" id="user-password" placeholder="Create a strong password" 
                                        class="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50" required>
-                                <p class="text-xs mt-1 text-white/80">This password will authenticate you as this user</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Encryption Settings -->
-                    <div class="encryption-section p-4 rounded-lg">
-                        <h4 class="font-medium mb-4 flex items-center">
+                    <div class="encryption-section p-3 md:p-4 rounded-lg">
+                        <h4 class="font-medium mb-3 md:mb-4 flex items-center text-sm md:text-base">
                             <i class="fas fa-lock mr-2"></i>
                             Message Encryption
                         </h4>
                         
-                        <div class="space-y-4">
+                        <div class="space-y-3 md:space-y-4">
                             <div>
-                                <label class="block text-sm font-medium mb-2">Encryption Method</label>
+                                <label class="block text-sm font-medium mb-2">Method</label>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
-                                        <input type="radio" name="encryption-method" value="token" class="text-white focus:ring-purple-300" checked>
-                                        <span class="ml-2 text-sm">Use GitHub Token (automatic for all repo members)</span>
+                                        <input type="radio" name="encryption-method" value="token" class="mr-2" checked>
+                                        <span class="text-xs md:text-sm">Use GitHub Token</span>
                                     </label>
                                     <label class="flex items-center">
-                                        <input type="radio" name="encryption-method" value="custom" class="text-white focus:ring-purple-300">
-                                        <span class="ml-2 text-sm">Custom encryption key (share with chat partners)</span>
+                                        <input type="radio" name="encryption-method" value="custom" class="mr-2">
+                                        <span class="text-xs md:text-sm">Custom key</span>
                                     </label>
                                 </div>
                             </div>
 
                             <div id="custom-key-section" class="hidden">
-                                <label class="block text-sm font-medium mb-2">Custom Encryption Key</label>
-                                <input type="password" id="custom-encryption-key" placeholder="Enter a strong passphrase..." 
+                                <label class="block text-sm font-medium mb-1 md:mb-2">Custom Key</label>
+                                <input type="password" id="custom-encryption-key" placeholder="Enter passphrase..." 
                                        class="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50">
-                                <p class="text-xs mt-1 text-white/80">Share this key securely with people you want to chat with</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Fixed Footer with Buttons -->
-            <div class="p-6 border-t border-gray-200 flex-shrink-0">
+            <!-- Fixed Footer -->
+            <div class="p-4 md:p-6 border-t border-gray-200 flex-shrink-0 safe-bottom">
                 <form id="connection-form">
-                    <div class="flex space-x-3">
-                        <button type="submit" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center">
-                            <span id="connect-text">Create Authenticated Chat</span>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base">
+                            <span id="connect-text">Create Chat</span>
                             <i id="connect-spinner" class="fas fa-spinner spinner ml-2 hidden"></i>
                         </button>
-                        <button type="button" id="cancel-connection" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all">
+                        <button type="button" id="cancel-connection" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm md:text-base">
                             Cancel
                         </button>
                     </div>
@@ -247,40 +376,40 @@
     </div>
 
     <!-- Main Chat Interface -->
-    <div id="chat-interface" class="hidden h-full flex flex-col">
+    <div id="chat-interface" class="hidden h-full-ios flex flex-col">
         <!-- Header -->
-        <header class="bg-white border-b border-gray-200 px-6 py-4">
+        <header class="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 safe-top">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-user-shield text-white"></i>
+                <div class="flex items-center space-x-2 md:space-x-4 min-w-0">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 p-1">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                    <div class="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user-shield text-white text-sm md:text-base"></i>
                     </div>
-                    <div>
-                        <h1 class="text-xl font-bold text-gray-900 flex items-center">
-                            GitHub Chat
-                            <span class="ml-2 text-xs px-2 py-1 bg-purple-100 text-purple-600 rounded-full">🔒 Encrypted</span>
-                            <span class="ml-2 text-xs px-2 py-1 bg-pink-100 text-pink-600 rounded-full">🛡️ Authenticated</span>
+                    <div class="min-w-0">
+                        <h1 class="text-base md:text-xl font-bold text-gray-900 flex items-center flex-wrap gap-1">
+                            <span>GitHub Chat</span>
+                            <span class="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-full">🔒</span>
+                            <span class="text-xs px-1.5 py-0.5 bg-pink-100 text-pink-600 rounded-full hidden sm:inline">🛡️</span>
                         </h1>
-                        <div class="flex items-center space-x-4">
-                            <p class="text-sm text-gray-500" id="repo-info">Connected to repository</p>
-                            <p class="text-sm text-purple-600" id="current-user">Logged in as: loading...</p>
+                        <div class="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm">
+                            <p class="text-gray-500 truncate hidden sm:block" id="repo-info">Connected</p>
+                            <p class="text-purple-600 truncate" id="current-user">User</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <div class="hidden sm:flex items-center space-x-2 text-xs md:text-sm text-gray-500">
                         <div id="online-indicator" class="w-2 h-2 bg-green-400 rounded-full pulse-online"></div>
-                        <span id="online-users">Loading...</span>
+                        <span id="online-users">0</span>
                     </div>
-                    <div class="flex items-center space-x-2 text-sm text-gray-500">
-                        <div id="connection-status" class="w-2 h-2 bg-green-400 rounded-full"></div>
-                        <span>Connected</span>
-                    </div>
-                    <button id="sync-btn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <button id="sync-btn" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
                         <i id="sync-icon" class="fas fa-sync-alt"></i>
                     </button>
-                    <button id="disconnect-btn" class="text-gray-400 hover:text-red-600 transition-colors">
+                    <button id="disconnect-btn" class="text-gray-400 hover:text-red-600 transition-colors p-1">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -289,15 +418,38 @@
 
         <!-- Chat Content -->
         <div class="flex-1 flex overflow-hidden">
-            <!-- Users Sidebar -->
-            <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
-                <div class="p-4 border-b border-gray-200">
-                    <h2 class="font-semibold text-gray-900">Authenticated Users</h2>
-                    <p class="text-xs text-gray-500 mt-1">Only verified users can send messages</p>
+            <!-- Mobile Users Drawer -->
+            <div id="mobile-drawer-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+            <div id="mobile-drawer" class="mobile-drawer bg-white z-40 md:hidden">
+                <div class="h-full flex flex-col safe-top safe-bottom">
+                    <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                        <div>
+                            <h2 class="font-semibold text-gray-900 text-sm">Authenticated Users</h2>
+                            <p class="text-xs text-gray-500 mt-1">Verified users only</p>
+                        </div>
+                        <button id="close-drawer" class="text-gray-400 hover:text-gray-600 p-1">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 scroll-smooth hide-scrollbar p-4">
+                        <div id="mobile-users-list" class="space-y-2">
+                            <!-- Users will be populated here -->
+                        </div>
+                    </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4">
-                    <div id="users-list" class="space-y-2">
-                        <!-- Users will be populated here -->
+            </div>
+
+            <!-- Desktop Users Sidebar -->
+            <div class="hidden md:block w-64 bg-white border-r border-gray-200 flex-col">
+                <div class="h-full flex flex-col">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="font-semibold text-gray-900">Authenticated Users</h2>
+                        <p class="text-xs text-gray-500 mt-1">Only verified users can send messages</p>
+                    </div>
+                    <div class="flex-1 scroll-smooth p-4">
+                        <div id="users-list" class="space-y-2">
+                            <!-- Users will be populated here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -305,25 +457,25 @@
             <!-- Chat Messages Area -->
             <div class="flex-1 flex flex-col">
                 <!-- Messages -->
-                <div class="flex-1 overflow-y-auto p-6 space-y-4" id="messages-container">
-                    <div class="text-center text-gray-500 text-sm">
+                <div class="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6 space-y-3 md:space-y-4" id="messages-container">
+                    <div class="text-center text-gray-500 text-xs md:text-sm">
                         <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
                         <p>All messages are encrypted and users are authenticated</p>
                     </div>
                 </div>
 
                 <!-- Message Input -->
-                <div class="border-t border-gray-200 p-4">
-                    <form id="message-form" class="flex space-x-4">
+                <div class="border-t border-gray-200 p-3 md:p-4 safe-bottom">
+                    <form id="message-form" class="flex space-x-2 md:space-x-4">
                         <div class="flex-1">
                             <input type="text" id="message-input" 
-                                   placeholder="Type a message... (encrypted & authenticated)" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Type a message..." 
+                                   class="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm md:text-base"
                                    autocomplete="off">
                         </div>
                         <button type="submit" 
-                                class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all">
-                            <i class="fas fa-user-shield"></i>
+                                class="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all">
+                            <i class="fas fa-paper-plane"></i>
                         </button>
                     </form>
                 </div>
@@ -332,12 +484,27 @@
     </div>
 
     <!-- Toast Notifications -->
-    <div id="toast-container" class="fixed top-4 right-4 space-y-2 z-40">
+    <div id="toast-container" class="fixed top-4 right-4 left-4 md:left-auto space-y-2 z-50 safe-top">
         <!-- Toasts will be added here -->
     </div>
 
     <script>
-        // [Same JavaScript code as before - keeping it unchanged for brevity]
+        // Viewport height fix
+        function setViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+
+        setViewportHeight();
+        window.addEventListener('resize', setViewportHeight);
+        window.addEventListener('orientationchange', setViewportHeight);
+
+        // Platform detection
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isAndroid = /android/i.test(navigator.userAgent);
+        const isMobile = window.innerWidth < 768 || isIOS || isAndroid;
+
+        // [Keep all existing classes - Encryption, UserAuth, GitHubStorageAPI, GitHubSessionManager, GitHubChatAPI]
         // Encryption Helper Class
         class ChatEncryption {
             constructor() {
@@ -933,7 +1100,7 @@
             }
         }
 
-        // Enhanced Chat Application
+        // Enhanced Chat Application with Mobile Support
         class ChatApp {
             constructor() {
                 this.api = new GitHubChatAPI();
@@ -953,6 +1120,35 @@
             init() {
                 this.setupEventListeners();
                 this.checkSavedSessions();
+                this.setupMobileDrawer();
+            }
+
+            setupMobileDrawer() {
+                const menuBtn = document.getElementById('mobile-menu-btn');
+                const drawer = document.getElementById('mobile-drawer');
+                const overlay = document.getElementById('mobile-drawer-overlay');
+                const closeBtn = document.getElementById('close-drawer');
+
+                if (menuBtn) {
+                    menuBtn.addEventListener('click', () => {
+                        drawer.classList.add('open');
+                        overlay.classList.remove('hidden');
+                    });
+                }
+
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        drawer.classList.remove('open');
+                        overlay.classList.add('hidden');
+                    });
+                }
+
+                if (overlay) {
+                    overlay.addEventListener('click', () => {
+                        drawer.classList.remove('open');
+                        overlay.classList.add('hidden');
+                    });
+                }
             }
 
             setupEventListeners() {
@@ -1044,31 +1240,26 @@
                     sessionsContainer.classList.remove('hidden');
                     
                     container.innerHTML = sessions.map(session => `
-                        <div class="session-card bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 cursor-pointer"
+                        <div class="session-card bg-gray-50 hover:bg-gray-100 p-3 md:p-4 rounded-lg border border-gray-200 cursor-pointer"
                              onclick="chatApp.loadSession('${session.sessionId}')">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
+                                <div class="flex items-center space-x-3 flex-1 min-w-0">
                                     <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${session.username}" 
-                                         alt="${session.username}" class="w-10 h-10 rounded-full">
-                                    <div>
-                                        <div class="font-semibold text-gray-900">${session.username}</div>
-                                        <div class="text-sm text-gray-600">${session.owner}/${session.repo}</div>
-                                        <div class="text-xs text-gray-500 flex items-center space-x-2">
-                                            <span>Last used: ${new Date(session.lastUsed).toLocaleDateString()}</span>
-                                            <span class="px-1 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">
-                                                🔒 ${session.encryptionMethod === 'token' ? 'Token Key' : 'Custom Key'}
-                                            </span>
-                                            <span class="px-1 py-0.5 bg-pink-100 text-pink-600 rounded text-xs">🛡️ Auth</span>
-                                            <span class="px-1 py-0.5 bg-green-100 text-green-600 rounded text-xs">✅ Valid</span>
+                                         alt="${session.username}" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-semibold text-gray-900 text-sm md:text-base truncate">${session.username}</div>
+                                        <div class="text-xs md:text-sm text-gray-600 truncate">${session.owner}/${session.repo}</div>
+                                        <div class="text-xs text-gray-500 flex flex-wrap items-center gap-1 mt-1">
+                                            <span class="hidden sm:inline">Last: ${new Date(session.lastUsed).toLocaleDateString()}</span>
+                                            <span class="px-1 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">🔒</span>
+                                            <span class="px-1 py-0.5 bg-pink-100 text-pink-600 rounded text-xs">🛡️</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="event.stopPropagation(); chatApp.removeSession('${session.sessionId}')" 
-                                            class="text-red-400 hover:text-red-600 p-1">
-                                        <i class="fas fa-trash text-sm"></i>
-                                    </button>
-                                </div>
+                                <button onclick="event.stopPropagation(); chatApp.removeSession('${session.sessionId}')" 
+                                        class="text-red-400 hover:text-red-600 p-2 ml-2">
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
                             </div>
                         </div>
                     `).join('');
@@ -1130,7 +1321,7 @@
                     this.showChatInterface();
                     
                     document.getElementById('repo-info').textContent = `${this.pendingSession.owner}/${this.pendingSession.repo}`;
-                    document.getElementById('current-user').textContent = `Logged in as: ${this.username}`;
+                    document.getElementById('current-user').textContent = `${this.username}`;
 
                     await this.loadMessages();
                     await this.loadUsers();
@@ -1245,7 +1436,7 @@
                     document.getElementById('connection-modal').classList.add('hidden');
                     this.showChatInterface();
                     document.getElementById('repo-info').textContent = `${owner}/${repo}`;
-                    document.getElementById('current-user').textContent = `Logged in as: ${username}`;
+                    document.getElementById('current-user').textContent = `${username}`;
                     
                     await this.loadMessages();
                     await this.loadUsers();
@@ -1309,7 +1500,7 @@
                 
                 if (messages.length === 0) {
                     container.innerHTML = `
-                        <div class="text-center text-gray-500 text-sm">
+                        <div class="text-center text-gray-500 text-xs md:text-sm">
                             <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
                             <p>All messages are encrypted and users are authenticated</p>
                         </div>
@@ -1331,16 +1522,16 @@
                         }
 
                         return `
-                            <div class="flex space-x-3 message-animation">
-                                <img src="${msg.avatar}" alt="${msg.username}" class="w-10 h-10 rounded-full">
-                                <div class="flex-1">
+                            <div class="flex space-x-2 md:space-x-3 message-animation">
+                                <img src="${msg.avatar}" alt="${msg.username}" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0">
+                                <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
-                                        <span class="font-semibold text-gray-900">${msg.username}</span>
-                                        <span class="text-sm text-gray-500">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                        <span class="font-semibold text-gray-900 text-sm md:text-base">${msg.username}</span>
+                                        <span class="text-xs md:text-sm text-gray-500">${new Date(msg.timestamp).toLocaleTimeString()}</span>
                                         ${msg.encrypted ? '<span class="text-xs px-1 py-0.5 bg-purple-100 text-purple-600 rounded">🔒</span>' : ''}
-                                        ${msg.authenticated ? '<span class="text-xs px-1 py-0.5 bg-pink-100 text-pink-600 rounded">🛡️</span>' : ''}
+                                        ${msg.authenticated ? '<span class="text-xs px-1 py-0.5 bg-pink-100 text-pink-600 rounded hidden sm:inline">🛡️</span>' : ''}
                                     </div>
-                                    <div class="${messageClass} mt-1 message-content">${messageContent}</div>
+                                    <div class="${messageClass} mt-1 message-content text-sm md:text-base">${messageContent}</div>
                                 </div>
                             </div>
                         `;
@@ -1353,8 +1544,7 @@
             }
 
             renderUsers(users) {
-                const container = document.getElementById('users-list');
-                
+                // Unique users
                 const uniqueUsers = {};
                 users.forEach(user => {
                     if (!uniqueUsers[user.username] || 
@@ -1371,20 +1561,31 @@
                             <img src="${user.avatar}" alt="${user.username}" class="w-8 h-8 rounded-full">
                             <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white pulse-online"></div>
                         </div>
-                        <div class="flex-1">
-                            <div class="font-medium text-gray-900 flex items-center">
-                                ${user.username}
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-900 flex items-center text-sm md:text-base">
+                                <span class="truncate">${user.username}</span>
                                 ${user.authenticated ? '<span class="ml-1 text-xs">🛡️</span>' : ''}
                             </div>
                             <div class="text-xs text-gray-500">
-                                ${user.username === this.username ? 'You' : 'Online'} • Authenticated
+                                ${user.username === this.username ? 'You' : 'Online'}
                             </div>
                         </div>
                     </div>
                 `;
                 
-                container.innerHTML = userList.map(renderUser).join('');
-                document.getElementById('online-users').textContent = `${userList.length} authenticated`;
+                // Render to both desktop and mobile containers
+                const desktopContainer = document.getElementById('users-list');
+                const mobileContainer = document.getElementById('mobile-users-list');
+                
+                if (desktopContainer) {
+                    desktopContainer.innerHTML = userList.map(renderUser).join('');
+                }
+                
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = userList.map(renderUser).join('');
+                }
+                
+                document.getElementById('online-users').textContent = `${userList.length}`;
             }
 
             startPolling() {
@@ -1480,7 +1681,7 @@
                     info: 'bg-blue-500'
                 }[type];
 
-                toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+                toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full text-sm md:text-base`;
                 toast.textContent = message;
 
                 document.getElementById('toast-container').appendChild(toast);
