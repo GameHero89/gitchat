@@ -780,11 +780,14 @@
                 this.keyLength = 256;
             }
 
-            async generateKey(password) {
+             async generateKey(password) {
+                // WICHTIG: Konvertiere zu lowercase für konsistente Keys
+                const normalizedPassword = password.toLowerCase();
+                
                 const encoder = new TextEncoder();
                 const keyMaterial = await crypto.subtle.importKey(
                     'raw',
-                    encoder.encode(password),
+                    encoder.encode(normalizedPassword),
                     'PBKDF2',
                     false,
                     ['deriveBits', 'deriveKey']
@@ -1207,8 +1210,8 @@
             constructor() {
                 super();
                 this.pollInterval = 3000;
-                this.heartbeatInterval = 8000;
-                this.userTimeoutSeconds = 15;
+                this.heartbeatInterval = 3000;
+                this.userTimeoutSeconds = 60;
                 this.heartbeatTimer = null;
                 this.sessionId = null;
                 this.encryption = new ChatEncryption();
@@ -1248,18 +1251,22 @@
             }
 
             async setupEncryption(method, token, customKey = null) {
-                this.encryptionMethod = method;
-                
-                if (method === 'token') {
-                    this.encryptionKey = await this.encryption.generateKey(token);
-                    this.customKeyString = null;
-                } else if (method === 'custom' && customKey) {
-                    this.customKeyString = customKey;
-                    this.encryptionKey = await this.encryption.generateKey(customKey);
-                } else {
-                    throw new Error('Invalid encryption setup');
-                }
-            }
+        this.encryptionMethod = method;
+        
+        if (method === 'token') {
+            // Token lowercase für konsistente Encryption
+            const normalizedToken = token.toLowerCase();
+            this.encryptionKey = await this.encryption.generateKey(normalizedToken);
+            this.customKeyString = null;
+        } else if (method === 'custom' && customKey) {
+            // Custom key auch lowercase
+            const normalizedKey = customKey.toLowerCase();
+            this.customKeyString = normalizedKey;
+            this.encryptionKey = await this.encryption.generateKey(normalizedKey);
+        } else {
+            throw new Error('Invalid encryption setup');
+        }
+    }
 
             async registerUser(username, password) {
                 return await this.userAuth.registerUser(username, password, this);
@@ -1360,33 +1367,29 @@
                 return true;
             }
 
-            async getUsers() {
-                // Get all heartbeat files
-                const heartbeatsDir = await this.getData('chat/heartbeats') || [];
-                const now = new Date();
-                const timeoutMs = this.userTimeoutSeconds * 1000;
-                const activeUsers = [];
+          async getUsers() {
+        // FIX: Korrekte API-Nutzung für Verzeichnislisting
+        const now = new Date();
+        const timeoutMs = this.userTimeoutSeconds * 1000;
+        const activeUsers = [];
 
-                // Try to read each user's heartbeat file
-                const userFiles = [];
-                try {
-                    const response = await this.makeRequest(`/repos/${this.owner}/${this.repo}/contents/chat/heartbeats`);
-                    if (response.ok) {
-                        const files = await response.json();
-                        for (const file of files) {
-                            if (file.name.endsWith('.json') && file.name !== 'README.md') {
-                                userFiles.push(file.name);
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error listing heartbeat files:', error);
-                }
+        try {
+            // Hole Verzeichnislisting direkt über API
+            const response = await this.makeRequest(
+                `/repos/${this.owner}/${this.repo}/contents/chat/heartbeats`
+            );
+            
+            if (!response.ok) {
+                return activeUsers;
+            }
 
-                for (const filename of userFiles) {
+            const files = await response.json();
+            
+            for (const file of files) {
+                if (file.type === 'file' && file.name.endsWith('.json') && file.name !== 'README.md') {
                     try {
-                        const username = filename.replace('.json', '');
-                        const heartbeatData = await this.getData(`chat/heartbeats/${filename}`);
+                        const username = file.name.replace('.json', '');
+                        const heartbeatData = await this.getData(`chat/heartbeats/${file.name}`);
                         
                         if (heartbeatData) {
                             const lastSeen = new Date(heartbeatData.timestamp);
@@ -1405,12 +1408,19 @@
                             }
                         }
                     } catch (error) {
-                        // Ignore individual file errors
+                        // Ignoriere einzelne Dateifehler
+                        console.log(`Error reading heartbeat for ${file.name}:`, error);
                     }
                 }
-
-                return activeUsers;
             }
+        } catch (error) {
+            console.error('Error listing heartbeat files:', error);
+        }
+
+        return activeUsers;
+    }
+
+
 
             startHeartbeat(username) {
                 this.stopHeartbeat();
@@ -1943,6 +1953,12 @@
                 if (!this.pendingSession) return;
 
                 const password = document.getElementById('session-password').value.trim();
+                 // Warnung bei Großbuchstaben
+        if (password !== password.toLowerCase()) {
+            this.showToast('ℹ️ Converting password to lowercase for authentication', 'info');
+        }
+
+
                 if (!password) {
                     this.showToast('Please enter your password', 'error');
                     return;
@@ -2025,15 +2041,24 @@
                 e.preventDefault();
                 
                 if (this.isConnecting) return;
-                this.isConnecting = true;
+        this.isConnecting = true;
 
-                const username = document.getElementById('username').value.trim();
-                const password = document.getElementById('user-password').value.trim();
-                const owner = document.getElementById('repo-owner').value.trim();
-                const repo = document.getElementById('repo-name').value.trim();
-                const token = document.getElementById('github-token').value.trim();
-                const encryptionMethod = document.querySelector('input[name="encryption-method"]:checked').value;
-                const customKey = document.getElementById('custom-encryption-key').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('user-password').value.trim();
+        const owner = document.getElementById('repo-owner').value.trim();
+        const repo = document.getElementById('repo-name').value.trim();
+        const token = document.getElementById('github-token').value.trim();
+        const encryptionMethod = document.querySelector('input[name="encryption-method"]:checked').value;
+        const customKey = document.getElementById('custom-encryption-key').value.trim();
+
+        // Warnung für Großbuchstaben
+        if (password !== password.toLowerCase()) {
+            this.showToast('⚠️ Password will be converted to lowercase for encryption compatibility', 'warning');
+        }
+
+        if (encryptionMethod === 'custom' && customKey && customKey !== customKey.toLowerCase()) {
+            this.showToast('⚠️ Custom key will be converted to lowercase for encryption compatibility', 'warning');
+        }
 
                 if (!username || !password || !owner || !repo || !token) {
                     this.showToast('Please fill in all fields', 'error');
