@@ -6,22 +6,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#9333ea">
-    <title>GitHub Chat - Encrypted & Authenticated</title>
+    <title>GitHub Chat - React Edition</title>
     
-    <!-- React & Babel CDNs -->
+    <!-- React and Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Tailwind CSS - Latest version for iOS compatibility -->
-    <script src="https://cdn.tailwindcss.com/3.4.0"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Tailwind config for iOS compatibility
         tailwind.config = {
             theme: {
                 extend: {
                     screens: {
-                        'ios': { 'raw': '(hover: none) and (pointer: coarse)' },
+                        'ios': {'raw': '(max-width: 768px) and (-webkit-min-device-pixel-ratio: 2)'},
                     }
                 }
             }
@@ -29,10 +28,13 @@
     </script>
     
     <!-- Font Awesome -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        window.FontAwesomeConfig = { autoReplaceSvg: false }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* Cross-platform fixes */
+        /* All your existing styles here - exactly as in your original file */
         * {
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
@@ -40,13 +42,11 @@
             user-select: none;
         }
         
-        /* Allow text selection in inputs */
         input, textarea {
             -webkit-user-select: text;
             user-select: text;
         }
         
-        /* Custom viewport height */
         :root {
             --vh: 1vh;
             --safe-top: env(safe-area-inset-top, 0px);
@@ -55,7 +55,6 @@
             --safe-right: env(safe-area-inset-right, 0px);
         }
         
-        /* Prevent iOS zoom on input focus */
         input, textarea, select {
             font-size: 16px !important;
             -webkit-appearance: none;
@@ -64,8 +63,7 @@
             border-radius: 0;
         }
         
-        /* Fix height for mobile */
-        html, body {
+        html, body, #root {
             height: 100%;
             margin: 0;
             padding: 0;
@@ -77,24 +75,11 @@
             height: calc(var(--vh, 1vh) * 100);
         }
         
-        /* Safe areas */
-        .safe-top {
-            padding-top: var(--safe-top);
-        }
+        .safe-top { padding-top: var(--safe-top); }
+        .safe-bottom { padding-bottom: var(--safe-bottom); }
+        .safe-left { padding-left: var(--safe-left); }
+        .safe-right { padding-right: var(--safe-right); }
         
-        .safe-bottom {
-            padding-bottom: var(--safe-bottom);
-        }
-        
-        .safe-left {
-            padding-left: var(--safe-left);
-        }
-        
-        .safe-right {
-            padding-right: var(--safe-right);
-        }
-        
-        /* Scrolling improvements */
         .scroll-smooth {
             -webkit-overflow-scrolling: touch;
             overflow-y: auto;
@@ -102,7 +87,6 @@
             overscroll-behavior: contain;
         }
         
-        /* Hide scrollbar on mobile */
         @media (max-width: 768px) {
             .hide-scrollbar {
                 scrollbar-width: none;
@@ -113,7 +97,6 @@
             }
         }
         
-        /* Animations */
         .message-animation {
             animation: slideInUp 0.3s ease-out;
         }
@@ -177,7 +160,6 @@
             color: white;
         }
         
-        /* Mobile drawer */
         .mobile-drawer {
             position: fixed;
             top: 0;
@@ -193,13 +175,11 @@
             transform: translateX(0);
         }
         
-        /* Modal backdrop */
         .modal-backdrop {
             backdrop-filter: blur(2px);
             -webkit-backdrop-filter: blur(2px);
         }
         
-        /* Fix inputs on iOS */
         input[type="text"],
         input[type="password"],
         textarea {
@@ -207,13 +187,11 @@
             border-radius: 0.5rem;
         }
         
-        /* Fix button styles */
         button {
             -webkit-appearance: none;
             touch-action: manipulation;
         }
         
-        /* Fix radio buttons visibility */
         input[type="radio"] {
             -webkit-appearance: none;
             appearance: none;
@@ -244,12 +222,10 @@
             transform: translate(-50%, -50%);
         }
         
-        /* Prevent overscroll */
         .prevent-overscroll {
             overscroll-behavior: contain;
         }
         
-        /* Panic button styles */
         .panic-button {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             transition: all 0.3s ease;
@@ -267,7 +243,6 @@
             50% { opacity: 1; }
         }
 
-        /* Typing indicator */
         .typing-indicator {
             display: inline-block;
             padding: 0 12px;
@@ -305,23 +280,12 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Viewport height fix
-        function setViewportHeight() {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        }
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-        setViewportHeight();
-        window.addEventListener('resize', setViewportHeight);
-        window.addEventListener('orientationchange', setViewportHeight);
+        // ============================================================================
+        // HELPER CLASSES (Same as your original)
+        // ============================================================================
 
-        // Platform detection
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        const isAndroid = /android/i.test(navigator.userAgent);
-        const isMobile = window.innerWidth < 768 || isIOS || isAndroid;
-
-        // =================== UTILITY CLASSES ===================
-        
         class ChatEncryption {
             constructor() {
                 this.algorithm = 'AES-GCM';
@@ -617,137 +581,146 @@
             }
         }
 
-        class GitHubSessionManager {
-            constructor() {
-                this.storageKey = 'github_sessions_auth';
-                this.lastUserKey = 'github_last_user';
-            }
+        // Ersetze die GitHubSessionManager Klasse mit dieser Version:
 
-            encodeData(data) {
-                return btoa(JSON.stringify(data));
-            }
+class GitHubSessionManager {
+    constructor() {
+        this.storageKey = 'github_sessions_auth';
+        this.lastUserKey = 'github_last_user';
+    }
 
-            decodeData(encodedData) {
-                try {
-                    return JSON.parse(atob(encodedData));
-                } catch (error) {
-                    return null;
-                }
-            }
+    encodeData(data) {
+        return btoa(JSON.stringify(data));
+    }
 
-            generateSessionId(username, owner, repo) {
-                return btoa(`${username}@${owner}/${repo}`).replace(/[^a-zA-Z0-9]/g, '');
-            }
+    decodeData(encodedData) {
+        try {
+            return JSON.parse(atob(encodedData));
+        } catch (error) {
+            return null;
+        }
+    }
 
-            getSessions() {
-                const encoded = localStorage.getItem(this.storageKey);
-                if (!encoded) return [];
+    generateSessionId(username, owner, repo) {
+        return btoa(`${username}@${owner}/${repo}`).replace(/[^a-zA-Z0-9]/g, '');
+    }
+
+    getSessions() {
+        const encoded = localStorage.getItem(this.storageKey);
+        if (!encoded) return [];
+        
+        const decoded = this.decodeData(encoded);
+        return Array.isArray(decoded) ? decoded : [];
+    }
+
+    getLastUsername() {
+        return localStorage.getItem(this.lastUserKey) || 'Unknown User';
+    }
+
+    setLastUsername(username) {
+        localStorage.setItem(this.lastUserKey, username);
+    }
+
+    saveSession(username, owner, repo, token, encryptionMethod, customKey = null) {
+        const sessions = this.getSessions();
+        const sessionId = this.generateSessionId(username, owner, repo);
+        
+        const filteredSessions = sessions.filter(s => s.sessionId !== sessionId);
+        
+        const newSession = {
+            sessionId,
+            username,
+            owner,
+            repo,
+            token: this.encodeData(token),
+            encryptionMethod,
+            customKey: customKey ? this.encodeData(customKey) : null,
+            requiresAuth: true,
+            lastUsed: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+        };
+        
+        filteredSessions.push(newSession);
+        
+        const recentSessions = filteredSessions
+            .sort((a, b) => new Date(b.lastUsed) - new Date(a.lastUsed))
+            .slice(0, 10);
+        
+        localStorage.setItem(this.storageKey, this.encodeData(recentSessions));
+        this.setLastUsername(username);
+        return sessionId;
+    }
+
+    getSession(sessionId) {
+        const sessions = this.getSessions();
+        const session = sessions.find(s => s.sessionId === sessionId);
+        
+        if (session) {
+            // Update lastUsed
+            const updatedSessions = sessions.map(s => 
+                s.sessionId === sessionId 
+                    ? {...s, lastUsed: new Date().toISOString()}
+                    : s
+            );
+            localStorage.setItem(this.storageKey, this.encodeData(updatedSessions));
+            this.setLastUsername(session.username);
+            
+            // Decode token and customKey
+            return {
+                ...session,
+                token: this.decodeData(session.token),
+                customKey: session.customKey ? this.decodeData(session.customKey) : null
+            };
+        }
+        
+        return null;
+    }
+
+    removeSession(sessionId) {
+        const sessions = this.getSessions();
+        const filteredSessions = sessions.filter(s => s.sessionId !== sessionId);
+        localStorage.setItem(this.storageKey, this.encodeData(filteredSessions));
+    }
+
+    async validateSessions(apiClass) {
+        const sessions = this.getSessions();
+        const validSessions = [];
+
+        for (const session of sessions) {
+            try {
+                // WICHTIG: Token korrekt dekodieren für Validierung
+                const decodedToken = this.decodeData(session.token);
                 
-                const decoded = this.decodeData(encoded);
-                return Array.isArray(decoded) ? decoded : [];
-            }
-
-            getLastUsername() {
-                return localStorage.getItem(this.lastUserKey) || 'Unknown User';
-            }
-
-            setLastUsername(username) {
-                localStorage.setItem(this.lastUserKey, username);
-            }
-
-            saveSession(username, owner, repo, token, encryptionMethod, customKey = null) {
-                const sessions = this.getSessions();
-                const sessionId = this.generateSessionId(username, owner, repo);
+                const tempApi = new apiClass();
+                await tempApi.connect(session.owner, session.repo, decodedToken);
                 
-                const filteredSessions = sessions.filter(s => s.sessionId !== sessionId);
-                
-                const newSession = {
-                    sessionId,
-                    username,
-                    owner,
-                    repo,
-                    token: this.encodeData(token),
-                    encryptionMethod,
-                    customKey: customKey ? this.encodeData(customKey) : null,
-                    requiresAuth: true,
-                    lastUsed: new Date().toISOString(),
-                    createdAt: new Date().toISOString()
-                };
-                
-                filteredSessions.push(newSession);
-                
-                const recentSessions = filteredSessions
-                    .sort((a, b) => new Date(b.lastUsed) - new Date(a.lastUsed))
-                    .slice(0, 10);
-                
-                localStorage.setItem(this.storageKey, this.encodeData(recentSessions));
-                this.setLastUsername(username);
-                return sessionId;
-            }
-
-            getSession(sessionId) {
-                const sessions = this.getSessions();
-                const session = sessions.find(s => s.sessionId === sessionId);
-                
-                if (session) {
-                    session.lastUsed = new Date().toISOString();
-                    localStorage.setItem(this.storageKey, this.encodeData(sessions));
-                    this.setLastUsername(session.username);
-                    
-                    return {
-                        ...session,
-                        token: this.decodeData(session.token),
-                        customKey: session.customKey ? this.decodeData(session.customKey) : null
-                    };
-                }
-                
-                return null;
-            }
-
-            removeSession(sessionId) {
-                const sessions = this.getSessions();
-                const filteredSessions = sessions.filter(s => s.sessionId !== sessionId);
-                localStorage.setItem(this.storageKey, this.encodeData(filteredSessions));
-            }
-
-            async validateSessions(apiClass) {
-                const sessions = this.getSessions();
-                const validSessions = [];
-
-                for (const session of sessions) {
-                    try {
-                        const tempApi = new apiClass();
-                        await tempApi.connect(session.owner, session.repo, this.decodeData(session.token));
-                        await tempApi.getData('chat/metadata.json');
-                        validSessions.push(session);
-                        tempApi.disconnect();
-                    } catch (error) {
-                        console.log(`Removing invalid session: ${session.username}@${session.owner}/${session.repo}`);
-                    }
-                }
-
-                localStorage.setItem(this.storageKey, this.encodeData(validSessions));
-                return validSessions;
-            }
-
-            clearAllSessions() {
-                localStorage.removeItem(this.storageKey);
-            }
-
-            clearAllData() {
-                localStorage.clear();
-                sessionStorage.clear();
-                
-                document.cookie.split(";").forEach(function(c) { 
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-                });
+                // Nur prüfen ob Verbindung funktioniert, nicht ob chat/metadata.json existiert
+                // da alte Sessions diese Datei möglicherweise nicht haben
+                validSessions.push(session);
+                tempApi.disconnect();
+            } catch (error) {
+                console.log(`Session validation failed for: ${session.username}@${session.owner}/${session.repo}`, error.message);
             }
         }
+
+        localStorage.setItem(this.storageKey, this.encodeData(validSessions));
+        return validSessions;
+    }
+
+    clearAllData() {
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+    }
+}
 
         class GitHubChatAPI extends GitHubStorageAPI {
             constructor() {
                 super();
-                this.pollInterval = 3000;
+                this.pollInterval = 1000;
                 this.heartbeatInterval = 3000;
                 this.userTimeoutSeconds = 60;
                 this.heartbeatTimer = null;
@@ -1000,506 +973,440 @@
             }
         }
 
-        // Global instances
-        const chatAPI = new GitHubChatAPI();
-        const sessionManager = new GitHubSessionManager();
-   // =================== REACT COMPONENTS ===================
+        // ============================================================================
+        // REACT COMPONENTS
+        // ============================================================================
 
-const { useState, useEffect, useRef, useCallback } = React;
+        // Toast Component
+        const Toast = ({ message, type, onClose }) => {
+            const bgColor = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            }[type] || 'bg-blue-500';
 
-// Toast Component
-const Toast = ({ message, type, onClose }) => {
-    useEffect(() => {
-        const timer = setTimeout(onClose, 3000);
-        return () => clearTimeout(timer);
-    }, [onClose]);
+            useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
 
-    const bgColor = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        warning: 'bg-yellow-500',
-        info: 'bg-blue-500'
-    }[type];
-
-    return (
-        <div className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 text-sm md:text-base`}>
-            {message}
-        </div>
-    );
-};
-
-// Modal Component
-const Modal = ({ isOpen, onClose, children, className = "" }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
-            <div className={`bg-white rounded-2xl shadow-2xl ${className}`}>
-                {children}
-            </div>
-        </div>
-    );
-};
-
-// Main Chat App Component
-const ChatApp = () => {
-    // State Management
-    const [isConnected, setIsConnected] = useState(false);
-    const [username, setUsername] = useState(null);
-    const [messages, setMessages] = useState([]);
-    const [users, setUsers] = useState([]);
-    const [toasts, setToasts] = useState([]);
-    const [savedSessions, setSavedSessions] = useState([]);
-    const [pendingSession, setPendingSession] = useState(null);
-    const [currentSessionData, setCurrentSessionData] = useState(null);
-    
-    // Modal states
-    const [showSessionModal, setShowSessionModal] = useState(true);
-    const [showConnectionModal, setShowConnectionModal] = useState(false);
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [showImportModal, setShowImportModal] = useState(false);
-    const [showShareModal, setShowShareModal] = useState(false);
-    const [showPanicModal, setShowPanicModal] = useState(false);
-    const [showKeyInfoModal, setShowKeyInfoModal] = useState(false);
-    const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-    
-    // Form states
-    const [connectionForm, setConnectionForm] = useState({
-        username: '',
-        password: '',
-        owner: '',
-        repo: '',
-        token: '',
-        encryptionMethod: 'token',
-        customKey: ''
-    });
-    
-    const [messageInput, setMessageInput] = useState('');
-    const [passwordInput, setPasswordInput] = useState('');
-    const [importData, setImportData] = useState('');
-    const [importKey, setImportKey] = useState('');
-    const [shareKey, setShareKey] = useState('');
-    const [shareResult, setShareResult] = useState('');
-    
-    // Loading states
-    const [isLoading, setIsLoading] = useState(false);
-    const [isValidating, setIsValidating] = useState(true);
-    
-    // Refs
-    const pollTimerRef = useRef(null);
-    const userPollTimerRef = useRef(null);
-    const typingTimerRef = useRef(null);
-    const messagesEndRef = useRef(null);
-
-    // Initialize
-    useEffect(() => {
-        checkSavedSessions();
-        
-        // Page visibility handling
-        const handleVisibilityChange = () => {
-            chatAPI.setPageVisibility(!document.hidden);
-            if (!document.hidden && username && chatAPI.isConnected) {
-                chatAPI.sendHeartbeat(username);
-            }
-        };
-        
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        // Page unload
-        const handleBeforeUnload = () => {
-            if (username && chatAPI.isConnected) {
-                chatAPI.leaveRoom(username);
-            }
-        };
-        
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            stopPolling();
-        };
-    }, [username]);
-
-    // Auto-scroll messages
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    // Helper Functions
-    const showToast = useCallback((message, type = 'info') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-    }, []);
-
-    const removeToast = useCallback((id) => {
-        setToasts(prev => prev.filter(t => t.id !== id));
-    }, []);
-
-    const checkSavedSessions = async () => {
-        setIsValidating(true);
-        const validSessions = await sessionManager.validateSessions(GitHubStorageAPI);
-        setSavedSessions(validSessions);
-        setIsValidating(false);
-    };
-
-    const startPolling = () => {
-        pollTimerRef.current = setInterval(async () => {
-            try {
-                const msgs = await chatAPI.getMessages('general');
-                setMessages(msgs);
-            } catch (error) {
-                console.error('Message polling error:', error);
-            }
-        }, chatAPI.pollInterval);
-
-        userPollTimerRef.current = setInterval(async () => {
-            try {
-                const activeUsers = await chatAPI.getUsers();
-                setUsers(activeUsers);
-            } catch (error) {
-                console.error('User polling error:', error);
-            }
-        }, chatAPI.pollInterval);
-    };
-
-    const stopPolling = () => {
-        if (pollTimerRef.current) {
-            clearInterval(pollTimerRef.current);
-            pollTimerRef.current = null;
-        }
-        if (userPollTimerRef.current) {
-            clearInterval(userPollTimerRef.current);
-            userPollTimerRef.current = null;
-        }
-    };
-
-    const escapeHtml = (text) => {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    };
-
-    // Event Handlers
-    const handleConnection = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-
-        try {
-            await chatAPI.connect(connectionForm.owner, connectionForm.repo, connectionForm.token);
-            await chatAPI.setupEncryption(
-                connectionForm.encryptionMethod, 
-                connectionForm.token, 
-                connectionForm.customKey
+            return (
+                <div className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 text-sm md:text-base`}>
+                    {message}
+                </div>
             );
-            await chatAPI.initializeChat();
+        };
 
-            let userRegistered = false;
-            try {
-                await chatAPI.registerUser(connectionForm.username, connectionForm.password);
-                userRegistered = true;
-                showToast('🆕 User registered successfully!', 'success');
-            } catch (error) {
-                if (!error.message.includes('Username already exists')) {
-                    throw error;
-                }
-            }
+        // Panic Modal Component
+        const PanicModal = ({ show, onConfirm, onCancel }) => {
+            if (!show) return null;
 
-            await chatAPI.authenticateUser(connectionForm.username, connectionForm.password);
-            
-            if (!userRegistered) {
-                showToast('🔓 User authenticated successfully!', 'success');
-            }
-
-            await chatAPI.joinRoom(connectionForm.username);
-            
-            setUsername(connectionForm.username);
-            const sessionId = sessionManager.saveSession(
-                connectionForm.username,
-                connectionForm.owner,
-                connectionForm.repo,
-                connectionForm.token,
-                connectionForm.encryptionMethod,
-                connectionForm.customKey
-            );
-            
-            setCurrentSessionData({
-                owner: connectionForm.owner,
-                repo: connectionForm.repo,
-                token: connectionForm.token,
-                encryptionMethod: connectionForm.encryptionMethod,
-                customKey: connectionForm.customKey
-            });
-            
-            setShowConnectionModal(false);
-            setIsConnected(true);
-            
-            const msgs = await chatAPI.getMessages('general');
-            setMessages(msgs);
-            
-            const activeUsers = await chatAPI.getUsers();
-            setUsers(activeUsers);
-            
-            startPolling();
-            showToast('🔒🛡️ Authenticated encrypted chat ready!', 'success');
-            
-        } catch (error) {
-            console.error('Connection error:', error);
-            showToast('Failed to create authenticated chat: ' + error.message, 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handlePasswordAuth = async (e) => {
-        e.preventDefault();
-        if (!pendingSession) return;
-        
-        setIsLoading(true);
-
-        try {
-            await chatAPI.connect(pendingSession.owner, pendingSession.repo, pendingSession.token);
-            await chatAPI.initializeChat();
-            await chatAPI.setupEncryption(pendingSession.encryptionMethod, pendingSession.token, pendingSession.customKey);
-            await chatAPI.authenticateUser(pendingSession.username, passwordInput);
-            await chatAPI.joinRoom(pendingSession.username);
-
-            setUsername(pendingSession.username);
-            setCurrentSessionData(pendingSession);
-            setShowPasswordModal(false);
-            setIsConnected(true);
-            
-            const msgs = await chatAPI.getMessages('general');
-            setMessages(msgs);
-            
-            const activeUsers = await chatAPI.getUsers();
-            setUsers(activeUsers);
-            
-            startPolling();
-            showToast('🔒🛡️ Authenticated successfully!', 'success');
-            
-            setPasswordInput('');
-            setPendingSession(null);
-
-        } catch (error) {
-            console.error('Authentication error:', error);
-            showToast(error.message.includes('password') ? 'Incorrect password' : 'Authentication failed: ' + error.message, 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!messageInput.trim()) return;
-
-        try {
-            await chatAPI.sendMessage(username, messageInput, 'general');
-            setMessageInput('');
-            const msgs = await chatAPI.getMessages('general');
-            setMessages(msgs);
-        } catch (error) {
-            console.error('Send message error:', error);
-            showToast('Failed to send authenticated message', 'error');
-        }
-    };
-
-    const handleTyping = () => {
-        if (!username || !chatAPI.isConnected) return;
-
-        chatAPI.setTypingStatus(username, true);
-
-        if (typingTimerRef.current) {
-            clearTimeout(typingTimerRef.current);
-        }
-
-        typingTimerRef.current = setTimeout(() => {
-            chatAPI.setTypingStatus(username, false);
-        }, chatAPI.typingTimeout);
-    };
-
-    const handleDisconnect = async () => {
-        if (!confirm('Are you sure you want to disconnect from the authenticated chat?')) {
-            return;
-        }
-
-        stopPolling();
-        
-        if (username && chatAPI.isConnected) {
-            try {
-                await chatAPI.leaveRoom(username);
-            } catch (error) {
-                console.error('Error leaving room:', error);
-            }
-        }
-        
-        chatAPI.disconnect();
-        
-        setUsername(null);
-        setIsConnected(false);
-        setMessages([]);
-        setUsers([]);
-        setCurrentSessionData(null);
-        setShowSessionModal(true);
-        
-        checkSavedSessions();
-        showToast('Disconnected from authenticated chat', 'info');
-    };
-
-    const loadSession = (sessionId) => {
-        const session = sessionManager.getSession(sessionId);
-        if (!session) {
-            showToast('Session not found', 'error');
-            return;
-        }
-        setPendingSession(session);
-        setShowSessionModal(false);
-        setShowPasswordModal(true);
-    };
-
-    const removeSession = (sessionId) => {
-        if (confirm('Are you sure you want to remove this saved session?')) {
-            sessionManager.removeSession(sessionId);
-            checkSavedSessions();
-            showToast('Session removed', 'info');
-        }
-    };
-
-    const handlePanicButton = async () => {
-        const lastUsername = sessionManager.getLastUsername();
-        
-        if (chatAPI.isConnected && chatAPI.encryptionKey) {
-            try {
-                await chatAPI.sendMessage(
-                    'SYSTEM', 
-                    `⚠️ EMERGENCY: User "${lastUsername}" has triggered the panic button and wiped all local data!`,
-                    'general',
-                    true
-                );
-            } catch (error) {
-                console.error('Could not send panic message:', error);
-            }
-        }
-
-        sessionManager.clearAllData();
-        showToast('🚨 All local data has been wiped!', 'warning');
-        
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
-    };
-
-    // Render
-    if (!isConnected) {
-        return (
-            <>
-                {/* Session Selection Modal */}
-                {showSessionModal && (
-                    <Modal isOpen={true} className="max-w-2xl w-full max-h-[90vh] overflow-hidden">
-                        <div className="p-6 md:p-8 border-b border-gray-200">
-                            <div className="text-center">
-                                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <i className="fas fa-user-shield text-white text-2xl md:text-3xl"></i>
-                                </div>
-                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">GitHub Chat</h1>
-                                <p className="text-sm md:text-base text-gray-600">Secure messaging with user authentication</p>
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i className="fas fa-exclamation-triangle text-white text-2xl"></i>
                             </div>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Emergency Data Wipe</h2>
+                            <p className="text-sm md:text-base text-gray-600">Are you sure? This will:</p>
+                            <ul className="text-sm text-gray-700 mt-3 text-left">
+                                <li className="mb-1">• Send an emergency notification to the chat</li>
+                                <li className="mb-1">• Delete all saved sessions</li>
+                                <li className="mb-1">• Clear all local storage data</li>
+                                <li className="mb-1">• Remove all authentication data</li>
+                            </ul>
+                            <p className="text-sm text-red-600 font-semibold mt-3">This action cannot be undone!</p>
                         </div>
 
-                        <div className="p-4 md:p-6 scroll-smooth hide-scrollbar max-h-96">
-                            {isValidating ? (
-                                <div className="text-center py-8">
-                                    <i className="fas fa-spinner spinner text-gray-400 text-2xl mb-4"></i>
-                                    <p className="text-gray-500">Validating saved sessions...</p>
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                            <button 
+                                onClick={onConfirm}
+                                className="flex-1 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-all"
+                            >
+                                <i className="fas fa-trash-alt mr-2"></i>
+                                Yes, Delete Everything
+                            </button>
+                            <button 
+                                onClick={onCancel}
+                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Import Modal Component
+        const ImportModal = ({ show, onClose, onImport, showToast }) => {
+            const [encryptedData, setEncryptedData] = useState('');
+            const [decryptionKey, setDecryptionKey] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onImport(encryptedData, decryptionKey);
+                setEncryptedData('');
+                setDecryptionKey('');
+            };
+
+            if (!show) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+                        <div className="text-center mb-6">
+                            <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i className="fas fa-download text-white text-xl md:text-2xl"></i>
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Import Shared Session</h2>
+                            <p className="text-sm md:text-base text-gray-600">Enter the encrypted data and key you received</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Encrypted Session Data</label>
+                                <textarea 
+                                    value={encryptedData}
+                                    onChange={(e) => setEncryptedData(e.target.value)}
+                                    placeholder="Paste the encrypted data here..." 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 h-32" 
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Decryption Key</label>
+                                <input 
+                                    type="password"
+                                    value={decryptionKey}
+                                    onChange={(e) => setDecryptionKey(e.target.value)}
+                                    placeholder="Enter the decryption key" 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" 
+                                    required
+                                />
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                                <button 
+                                    type="submit" 
+                                    className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition-all"
+                                >
+                                    Import Session
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={onClose}
+                                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // Key Info Modal Component
+        const KeyInfoModal = ({ show, onClose, currentSessionData, onShareSession, showToast }) => {
+            if (!show) return null;
+
+            const getEncryptionMethodText = () => {
+                if (!currentSessionData) return 'No active session';
+                
+                if (currentSessionData.encryptionMethod === 'token') {
+                    return '🔐 Using GitHub Token for encryption';
+                } else if (currentSessionData.encryptionMethod === 'custom') {
+                    return '🔑 Using Custom Key for encryption';
+                }
+                return 'Unknown encryption method';
+            };
+
+            const handleCopyKey = () => {
+                if (currentSessionData?.customKey) {
+                    navigator.clipboard.writeText(currentSessionData.customKey);
+                    showToast('Key copied to clipboard!', 'success');
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+                        <div className="text-center mb-6">
+                            <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i className="fas fa-key text-white text-xl md:text-2xl"></i>
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Encryption Key Info</h2>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="p-4 bg-purple-50 rounded-lg">
+                                <h4 className="font-medium text-purple-900 mb-2">Current Encryption</h4>
+                                <p className="text-sm text-purple-700">{getEncryptionMethodText()}</p>
+                            </div>
+
+                            {currentSessionData?.encryptionMethod === 'custom' && currentSessionData?.customKey && (
+                                <div className="p-4 bg-yellow-50 rounded-lg">
+                                    <h4 className="font-medium text-yellow-900 mb-2">Current Encryption Key</h4>
+                                    <div className="flex items-center space-x-2">
+                                        <input 
+                                            type="text" 
+                                            value={currentSessionData.customKey} 
+                                            readOnly 
+                                            className="flex-1 px-3 py-2 bg-white border border-yellow-300 rounded text-sm"
+                                        />
+                                        <button 
+                                            onClick={handleCopyKey}
+                                            className="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                                        >
+                                            <i className="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-yellow-700 mt-2">This is the key being used for message encryption</p>
                                 </div>
-                            ) : (
-                                <>
-                                    {savedSessions.length > 0 && (
-                                        <div className="mb-6">
-                                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Saved Sessions</h3>
-                                            <div className="space-y-3">
-                                                {savedSessions.map(session => (
-                                                    <div
-                                                        key={session.sessionId}
-                                                        className="session-card bg-gray-50 hover:bg-gray-100 p-3 md:p-4 rounded-lg border border-gray-200 cursor-pointer"
-                                                        onClick={() => loadSession(session.sessionId)}
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                                                <img 
-                                                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${session.username}`}
-                                                                    alt={session.username} 
-                                                                    className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" 
-                                                                />
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="font-semibold text-gray-900 text-sm md:text-base truncate">{session.username}</div>
-                                                                    <div className="text-xs md:text-sm text-gray-600 truncate">{session.owner}/{session.repo}</div>
-                                                                    <div className="text-xs text-gray-500 flex flex-wrap items-center gap-1 mt-1">
-                                                                        <span className="hidden sm:inline">Last: {new Date(session.lastUsed).toLocaleDateString()}</span>
-                                                                        <span className="px-1 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">🔒</span>
-                                                                        <span className="px-1 py-0.5 bg-pink-100 text-pink-600 rounded text-xs">🛡️</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <button 
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    removeSession(session.sessionId);
-                                                                }}
-                                                                className="text-red-400 hover:text-red-600 p-2 ml-2"
-                                                            >
-                                                                <i className="fas fa-trash text-sm"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-3">
-                                        <button 
-                                            onClick={() => {
-                                                setShowSessionModal(false);
-                                                setShowConnectionModal(true);
-                                            }}
-                                            className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base"
-                                        >
-                                            <i className="fas fa-plus mr-2"></i>
-                                            Create or Join Chat
-                                        </button>
-                                        
-                                        <button 
-                                            onClick={() => {
-                                                setShowSessionModal(false);
-                                                setShowImportModal(true);
-                                            }}
-                                            className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition-all flex items-center justify-center text-sm md:text-base"
-                                        >
-                                            <i className="fas fa-download mr-2"></i>
-                                            Import Shared Session
-                                        </button>
-                                    </div>
-                                    
-                                    <div className="mt-8 pt-4 border-t border-gray-200">
-                                        <button 
-                                            onClick={() => setShowPanicModal(true)}
-                                            className="w-full panic-button text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center text-sm md:text-base"
-                                        >
-                                            <i className="fas fa-exclamation-triangle mr-2"></i>
-                                            Emergency Data Wipe
-                                        </button>
-                                        <p className="text-xs text-gray-500 text-center mt-2">⚠️ Deletes all local data immediately</p>
-                                    </div>
-                                </>
                             )}
-                        </div>
-                    </Modal>
-                )}
 
-                {/* Connection Modal */}
-                {showConnectionModal && (
-                    <Modal isOpen={true} className="max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
+                            <button 
+                                onClick={onShareSession}
+                                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all"
+                            >
+                                <i className="fas fa-share-alt mr-2"></i>Share Session Data
+                            </button>
+
+                            <button 
+                                onClick={onClose}
+                                className="w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-all"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Share Session Modal Component
+        const ShareSessionModal = ({ show, onClose, shareData, onGenerateShare, showToast }) => {
+            const [shareKey, setShareKey] = useState('');
+            const [dataGenerated, setDataGenerated] = useState(false);
+
+            useEffect(() => {
+                if (!show) {
+                    setShareKey('');
+                    setDataGenerated(false);
+                }
+            }, [show]);
+
+            useEffect(() => {
+                if (shareData) {
+                    setDataGenerated(true);
+                }
+            }, [shareData]);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!shareKey.trim()) {
+                    showToast('Please enter an encryption key', 'error');
+                    return;
+                }
+                await onGenerateShare(shareKey);
+            };
+
+            const handleCopyData = () => {
+                if (shareData) {
+                    navigator.clipboard.writeText(shareData);
+                    showToast('Encrypted data copied to clipboard!', 'success');
+                }
+            };
+
+            if (!show) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+                        <div className="text-center mb-6">
+                            <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i className="fas fa-share-alt text-white text-xl md:text-2xl"></i>
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Share Session Data</h2>
+                            <p className="text-sm md:text-base text-gray-600">Create a secure key to encrypt your session data</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Encryption Key for Sharing
+                                </label>
+                                <input 
+                                    type="password" 
+                                    value={shareKey}
+                                    onChange={(e) => setShareKey(e.target.value)}
+                                    placeholder="Create a strong key..." 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Share this key separately and securely</p>
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 transition-all"
+                            >
+                                Generate Encrypted Data
+                            </button>
+                        </form>
+
+                        {dataGenerated && shareData && (
+                            <div className="mt-6 space-y-4">
+                                <div className="p-4 bg-green-50 rounded-lg">
+                                    <h4 className="font-medium text-green-900 mb-2">Encrypted Session Data</h4>
+                                    <div className="flex items-center space-x-2">
+                                        <textarea 
+                                            value={shareData} 
+                                            readOnly 
+                                            className="flex-1 px-3 py-2 bg-white border border-green-300 rounded text-sm h-32 font-mono text-xs"
+                                        />
+                                    </div>
+                                    <button 
+                                        onClick={handleCopyData}
+                                        className="mt-2 w-full px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                                    >
+                                        <i className="fas fa-copy mr-2"></i>Copy to Clipboard
+                                    </button>
+                                </div>
+                                
+                                <p className="text-xs text-gray-600">
+                                    <strong>Instructions:</strong><br/>
+                                    1. Copy the encrypted data above<br/>
+                                    2. Share it via any messaging app<br/>
+                                    3. Share the encryption key separately<br/>
+                                    4. Recipient uses "Import Shared Session" to connect
+                                </p>
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={onClose}
+                            className="mt-4 w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-all"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Continue in next part...
+
+        // Füge dies direkt nach Teil 1 ein (innerhalb des gleichen <script type="text/babel"> Tags)
+
+        // Password Modal Component
+        const PasswordModal = ({ show, onClose, pendingSession, onAuthenticate, isAuthenticating }) => {
+            const [password, setPassword] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onAuthenticate(password);
+            };
+
+            if (!show) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8">
+                        <div className="text-center mb-6 md:mb-8">
+                            <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i className="fas fa-lock text-white text-xl md:text-2xl"></i>
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Enter Password</h2>
+                            <p className="text-sm md:text-base text-gray-600">Enter your password to access this chat session</p>
+                            <p className="text-sm text-purple-600 mt-2">Username: {pendingSession?.username || 'loading...'}</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input 
+                                    type="password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter your password" 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" 
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                                <button 
+                                    type="submit" 
+                                    disabled={isAuthenticating}
+                                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base disabled:opacity-50"
+                                >
+                                    {isAuthenticating ? (
+                                        <>
+                                            <i className="fas fa-spinner spinner mr-2"></i>
+                                            Authenticating...
+                                        </>
+                                    ) : (
+                                        'Authenticate'
+                                    )}
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setPassword('');
+                                        onClose();
+                                    }}
+                                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm md:text-base"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // Connection Modal Component
+        const ConnectionModal = ({ show, onClose, onConnect, isConnecting, initialData = {} }) => {
+            const [formData, setFormData] = useState({
+                repoOwner: initialData.owner || '',
+                repoName: initialData.repo || '',
+                githubToken: initialData.token || '',
+                username: '',
+                userPassword: '',
+                encryptionMethod: initialData.encryptionMethod || 'token',
+                customKey: initialData.customKey || ''
+            });
+
+            useEffect(() => {
+                if (initialData) {
+                    setFormData(prev => ({
+                        ...prev,
+                        repoOwner: initialData.owner || prev.repoOwner,
+                        repoName: initialData.repo || prev.repoName,
+                        githubToken: initialData.token || prev.githubToken,
+                        encryptionMethod: initialData.encryptionMethod || prev.encryptionMethod,
+                        customKey: initialData.customKey || prev.customKey
+                    }));
+                }
+            }, [initialData]);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onConnect(formData);
+            };
+
+            if (!show) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
                         <div className="p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
                             <div className="text-center">
                                 <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -1510,17 +1417,17 @@ const ChatApp = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 scroll-smooth hide-scrollbar">
-                            <form onSubmit={handleConnection} className="p-4 md:p-6 space-y-4 md:space-y-6">
+                        <div className="flex-1 scroll-smooth hide-scrollbar overflow-y-auto">
+                            <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 md:space-y-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Repository Owner</label>
                                     <input 
                                         type="text" 
-                                        value={connectionForm.owner}
-                                        onChange={(e) => setConnectionForm({...connectionForm, owner: e.target.value})}
+                                        value={formData.repoOwner}
+                                        onChange={(e) => setFormData({...formData, repoOwner: e.target.value})}
                                         placeholder="username or organization" 
                                         className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" 
-                                        required 
+                                        required
                                     />
                                 </div>
 
@@ -1528,11 +1435,11 @@ const ChatApp = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Repository Name</label>
                                     <input 
                                         type="text" 
-                                        value={connectionForm.repo}
-                                        onChange={(e) => setConnectionForm({...connectionForm, repo: e.target.value})}
+                                        value={formData.repoName}
+                                        onChange={(e) => setFormData({...formData, repoName: e.target.value})}
                                         placeholder="chat-repo" 
                                         className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" 
-                                        required 
+                                        required
                                     />
                                 </div>
 
@@ -1540,14 +1447,16 @@ const ChatApp = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Personal Access Token</label>
                                     <input 
                                         type="password" 
-                                        value={connectionForm.token}
-                                        onChange={(e) => setConnectionForm({...connectionForm, token: e.target.value})}
+                                        value={formData.githubToken}
+                                        onChange={(e) => setFormData({...formData, githubToken: e.target.value})}
                                         placeholder="ghp_xxxxxxxxxxxx" 
                                         className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" 
-                                        required 
+                                        required
                                     />
                                     <p className="text-xs text-gray-500 mt-1">
-                                        <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Create a token</a>
+                                        <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                                            Create a token
+                                        </a>
                                     </p>
                                 </div>
 
@@ -1562,11 +1471,11 @@ const ChatApp = () => {
                                             <label className="block text-sm font-medium mb-1 md:mb-2">Username</label>
                                             <input 
                                                 type="text" 
-                                                value={connectionForm.username}
-                                                onChange={(e) => setConnectionForm({...connectionForm, username: e.target.value})}
+                                                value={formData.username}
+                                                onChange={(e) => setFormData({...formData, username: e.target.value})}
                                                 placeholder="Your unique username" 
                                                 className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50" 
-                                                required 
+                                                required
                                             />
                                         </div>
 
@@ -1574,11 +1483,11 @@ const ChatApp = () => {
                                             <label className="block text-sm font-medium mb-1 md:mb-2">Password</label>
                                             <input 
                                                 type="password" 
-                                                value={connectionForm.password}
-                                                onChange={(e) => setConnectionForm({...connectionForm, password: e.target.value})}
+                                                value={formData.userPassword}
+                                                onChange={(e) => setFormData({...formData, userPassword: e.target.value})}
                                                 placeholder="Create a strong password" 
                                                 className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50" 
-                                                required 
+                                                required
                                             />
                                         </div>
                                     </div>
@@ -1599,9 +1508,9 @@ const ChatApp = () => {
                                                         type="radio" 
                                                         name="encryption-method" 
                                                         value="token" 
-                                                        checked={connectionForm.encryptionMethod === 'token'}
-                                                        onChange={(e) => setConnectionForm({...connectionForm, encryptionMethod: e.target.value})}
-                                                        className="mr-2" 
+                                                        checked={formData.encryptionMethod === 'token'}
+                                                        onChange={(e) => setFormData({...formData, encryptionMethod: e.target.value})}
+                                                        className="mr-2"
                                                     />
                                                     <span className="text-xs md:text-sm">Use GitHub Token</span>
                                                 </label>
@@ -1610,37 +1519,38 @@ const ChatApp = () => {
                                                         type="radio" 
                                                         name="encryption-method" 
                                                         value="custom" 
-                                                        checked={connectionForm.encryptionMethod === 'custom'}
-                                                        onChange={(e) => setConnectionForm({...connectionForm, encryptionMethod: e.target.value})}
-                                                        className="mr-2" 
+                                                        checked={formData.encryptionMethod === 'custom'}
+                                                        onChange={(e) => setFormData({...formData, encryptionMethod: e.target.value})}
+                                                        className="mr-2"
                                                     />
                                                     <span className="text-xs md:text-sm">Custom key</span>
                                                 </label>
                                             </div>
                                         </div>
 
-                                        {connectionForm.encryptionMethod === 'custom' && (
+                                        {formData.encryptionMethod === 'custom' && (
                                             <div>
                                                 <label className="block text-sm font-medium mb-1 md:mb-2">Custom Key</label>
                                                 <input 
                                                     type="password" 
-                                                    value={connectionForm.customKey}
-                                                    onChange={(e) => setConnectionForm({...connectionForm, customKey: e.target.value})}
+                                                    value={formData.customKey}
+                                                    onChange={(e) => setFormData({...formData, customKey: e.target.value})}
                                                     placeholder="Enter passphrase..." 
                                                     className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded text-white placeholder-white/70 focus:ring-2 focus:ring-white/50"
+                                                    required={formData.encryptionMethod === 'custom'}
                                                 />
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                                     <button 
                                         type="submit" 
-                                        disabled={isLoading}
-                                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base"
+                                        disabled={isConnecting}
+                                        className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base disabled:opacity-50"
                                     >
-                                        {isLoading ? (
+                                        {isConnecting ? (
                                             <>
                                                 <i className="fas fa-spinner spinner mr-2"></i>
                                                 Connecting...
@@ -1651,10 +1561,7 @@ const ChatApp = () => {
                                     </button>
                                     <button 
                                         type="button" 
-                                        onClick={() => {
-                                            setShowConnectionModal(false);
-                                            setShowSessionModal(true);
-                                        }}
+                                        onClick={onClose}
                                         className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm md:text-base"
                                     >
                                         Cancel
@@ -1662,387 +1569,913 @@ const ChatApp = () => {
                                 </div>
                             </form>
                         </div>
-                    </Modal>
-                )}
-
-                {/* Password Modal */}
-                {showPasswordModal && (
-                    <Modal isOpen={true} className="max-w-md w-full p-6 md:p-8">
-                        <div className="text-center mb-6 md:mb-8">
-                            <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i className="fas fa-lock text-white text-xl md:text-2xl"></i>
-                            </div>
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Enter Password</h2>
-                            <p className="text-sm md:text-base text-gray-600">Enter your password to access this chat session</p>
-                            <p className="text-sm text-purple-600 mt-2">Username: {pendingSession?.username}</p>
-                        </div>
-
-                        <form onSubmit={handlePasswordAuth} className="space-y-4 md:space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                                <input 
-                                    type="password" 
-                                    value={passwordInput}
-                                    onChange={(e) => setPasswordInput(e.target.value)}
-                                    placeholder="Enter your password" 
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" 
-                                    required 
-                                />
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                                <button 
-                                    type="submit" 
-                                    disabled={isLoading}
-                                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base"
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <i className="fas fa-spinner spinner mr-2"></i>
-                                            Authenticating...
-                                        </>
-                                    ) : (
-                                        'Authenticate'
-                                    )}
-                                </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => {
-                                        setShowPasswordModal(false);
-                                        setShowSessionModal(true);
-                                        setPendingSession(null);
-                                        setPasswordInput('');
-                                    }}
-                                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm md:text-base"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </Modal>
-                )}
-
-                {/* Panic Modal */}
-                {showPanicModal && (
-                    <Modal isOpen={true} className="max-w-md w-full p-6 md:p-8">
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i className="fas fa-exclamation-triangle text-white text-2xl"></i>
-                            </div>
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Emergency Data Wipe</h2>
-                            <p className="text-sm md:text-base text-gray-600">Are you sure? This will:</p>
-                            <ul className="text-sm text-gray-700 mt-3 text-left">
-                                <li className="mb-1">• Send an emergency notification to the chat</li>
-                                <li className="mb-1">• Delete all saved sessions</li>
-                                <li className="mb-1">• Clear all local storage data</li>
-                                <li className="mb-1">• Remove all authentication data</li>
-                            </ul>
-                            <p className="text-sm text-red-600 font-semibold mt-3">This action cannot be undone!</p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                            <button 
-                                onClick={handlePanicButton}
-                                className="flex-1 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-all"
-                            >
-                                <i className="fas fa-trash-alt mr-2"></i>
-                                Yes, Delete Everything
-                            </button>
-                            <button 
-                                onClick={() => setShowPanicModal(false)}
-                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </Modal>
-                )}
-
-                {/* Toasts */}
-                <div className="fixed top-4 right-4 left-4 md:left-auto space-y-2 z-50 safe-top">
-                    {toasts.map(toast => (
-                        <Toast
-                            key={toast.id}
-                            message={toast.message}
-                            type={toast.type}
-                            onClose={() => removeToast(toast.id)}
-                        />
-                    ))}
+                    </div>
                 </div>
-            </>
-        );
-    }
+            );
+        };
 
-    // Chat Interface
-    return (
-        <>
-            <div className="h-full-ios flex flex-col">
-                {/* Header */}
-                <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 safe-top">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 md:space-x-4 min-w-0">
-                            <button 
-                                onClick={() => setShowMobileDrawer(true)}
-                                className="md:hidden text-gray-600 hover:text-gray-900 p-1"
-                            >
-                                <i className="fas fa-bars text-lg"></i>
-                            </button>
-                            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                <i className="fas fa-user-shield text-white text-sm md:text-base"></i>
-                            </div>
-                            <div className="min-w-0">
-                                <h1 className="text-base md:text-xl font-bold text-gray-900 flex items-center flex-wrap gap-1">
-                                    <span>GitHub Chat</span>
-                                    <span className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-full">🔒</span>
-                                    <span className="text-xs px-1.5 py-0.5 bg-pink-100 text-pink-600 rounded-full hidden sm:inline">🛡️</span>
-                                </h1>
-                                <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm">
-                                    <p className="text-gray-500 truncate hidden sm:block">
-                                        {currentSessionData?.owner}/{currentSessionData?.repo}
-                                    </p>
-                                    <p className="text-purple-600 truncate">{username}</p>
+        // Chat Interface Component
+        const ChatInterface = ({ 
+            currentUser, 
+            currentSessionData,
+            messages, 
+            users, 
+            onSendMessage, 
+            onDisconnect, 
+            onSync, 
+            onShowKeyInfo,
+            typingUsers,
+            showToast
+        }) => {
+            const [messageInput, setMessageInput] = useState('');
+            const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+            const messagesEndRef = useRef(null);
+            const typingTimerRef = useRef(null);
+
+            const handleSendMessage = (e) => {
+                e.preventDefault();
+                if (messageInput.trim()) {
+                    onSendMessage(messageInput);
+                    setMessageInput('');
+                }
+            };
+
+            const handleTyping = () => {
+                // Typing logic handled in parent
+                if (onTyping) onTyping();
+            };
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            const escapeHtml = (text) => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+
+            const renderMessage = (msg) => {
+                let messageContent;
+                let messageClass = 'text-gray-700';
+                
+                if (msg.encrypted) {
+                    if (msg.decryptionFailed) {
+                        messageContent = '🔒 [Message could not be decrypted - wrong key?]';
+                        messageClass = 'text-red-600 italic';
+                    } else {
+                        messageContent = escapeHtml(msg.decryptedMessage);
+                    }
+                } else {
+                    messageContent = escapeHtml(msg.message);
+                }
+
+                if (msg.isSystem) {
+                    return (
+                        <div key={msg.id} className="flex space-x-2 md:space-x-3 message-animation p-3 bg-red-50 rounded-lg border border-red-200">
+                            <img src={msg.avatar} alt={msg.username} className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                    <span className="font-semibold text-red-700 text-sm md:text-base">SYSTEM ALERT</span>
+                                    <span className="text-xs md:text-sm text-red-600">{new Date(msg.timestamp).toLocaleTimeString()}</span>
                                 </div>
+                                <div className="text-red-700 mt-1 message-content text-sm md:text-base font-medium" 
+                                     dangerouslySetInnerHTML={{__html: messageContent}} />
                             </div>
                         </div>
-                        
-                        <div className="flex items-center space-x-2 md:space-x-4">
-                            <div className="hidden sm:flex items-center space-x-2 text-xs md:text-sm text-gray-500">
-                                <div className="w-2 h-2 bg-green-400 rounded-full pulse-online"></div>
-                                <span>{users.length}</span>
-                            </div>
-                            <button 
-                                onClick={() => setShowKeyInfoModal(true)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                            >
-                                <i className="fas fa-key"></i>
-                            </button>
-                            <button 
-                                onClick={async () => {
-                                    try {
-                                        const msgs = await chatAPI.getMessages('general');
-                                        setMessages(msgs);
-                                        const activeUsers = await chatAPI.getUsers();
-                                        setUsers(activeUsers);
-                                        showToast('🔒🛡️ Authenticated data synced!', 'success');
-                                    } catch (error) {
-                                        showToast('Sync failed', 'error');
-                                    }
-                                }}
-                                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                            >
-                                <i className="fas fa-sync-alt"></i>
-                            </button>
-                            <button 
-                                onClick={handleDisconnect}
-                                className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                            >
-                                <i className="fas fa-sign-out-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                </header>
+                    );
+                }
 
-                {/* Chat Content */}
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Mobile Users Drawer */}
-                    {showMobileDrawer && (
-                        <>
-                            <div 
-                                className="fixed inset-0 bg-black/50 z-40 md:hidden"
-                                onClick={() => setShowMobileDrawer(false)}
-                            ></div>
-                            <div className={`mobile-drawer bg-white z-40 md:hidden ${showMobileDrawer ? 'open' : ''}`}>
-                                <div className="h-full flex flex-col safe-top safe-bottom">
-                                    <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                                        <div>
-                                            <h2 className="font-semibold text-gray-900 text-sm">Authenticated Users</h2>
-                                            <p className="text-xs text-gray-500 mt-1">Verified users only</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => setShowMobileDrawer(false)}
-                                            className="text-gray-400 hover:text-gray-600 p-1"
-                                        >
-                                            <i className="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 scroll-smooth hide-scrollbar p-4">
-                                        <div className="space-y-2">
-                                            {users.map(user => (
-                                                <div key={user.sessionId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
-                                                    <div className="relative">
-                                                        <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
-                                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white pulse-online"></div>
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-medium text-gray-900 flex items-center text-sm md:text-base">
-                                                            <span className="truncate">{user.username}</span>
-                                                            {user.authenticated && <span className="ml-1 text-xs">🛡️</span>}
-                                                        </div>
-                                                        <div className="text-xs text-gray-500">
-                                                            {user.username === username ? 'You' : 'Online'}
-                                                            {user.isTyping && user.username !== username && ' • typing...'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
+                return (
+                    <div key={msg.id} className="flex space-x-2 md:space-x-3 message-animation">
+                        <img src={msg.avatar} alt={msg.username} className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                                <span className="font-semibold text-gray-900 text-sm md:text-base">{msg.username}</span>
+                                <span className="text-xs md:text-sm text-gray-500">{new Date(msg.timestamp).toLocaleTimeString()}</span>
+                                {msg.encrypted && <span className="text-xs px-1 py-0.5 bg-purple-100 text-purple-600 rounded">🔒</span>}
+                                {msg.authenticated && <span className="text-xs px-1 py-0.5 bg-pink-100 text-pink-600 rounded hidden sm:inline">🛡️</span>}
                             </div>
-                        </>
-                    )}
-
-                    {/* Desktop Users Sidebar */}
-                    <div className="hidden md:block w-64 bg-white border-r border-gray-200 flex-col">
-                        <div className="h-full flex flex-col">
-                            <div className="p-4 border-b border-gray-200">
-                                <h2 className="font-semibold text-gray-900">Authenticated Users</h2>
-                                <p className="text-xs text-gray-500 mt-1">Only verified users can send messages</p>
-                            </div>
-                            <div className="flex-1 scroll-smooth p-4">
-                                <div className="space-y-2">
-                                    {users.map(user => (
-                                        <div key={user.sessionId} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
-                                            <div className="relative">
-                                                <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
-                                                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white pulse-online"></div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-gray-900 flex items-center text-sm md:text-base">
-                                                    <span className="truncate">{user.username}</span>
-                                                    {user.authenticated && <span className="ml-1 text-xs">🛡️</span>}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {user.username === username ? 'You' : 'Online'}
-                                                    {user.isTyping && user.username !== username && ' • typing...'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                            <div className={`${messageClass} mt-1 message-content text-sm md:text-base`}
+                                 dangerouslySetInnerHTML={{__html: messageContent}} />
                         </div>
                     </div>
+                );
+            };
 
-                    {/* Chat Messages Area */}
-                    <div className="flex-1 flex flex-col">
-                        {/* Messages */}
-                        <div className="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6 space-y-3 md:space-y-4">
-                            {messages.length === 0 ? (
-                                <div className="text-center text-gray-500 text-xs md:text-sm">
-                                    <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
-                                    <p>All messages are encrypted and users are authenticated</p>
-                                </div>
-                            ) : (
-                                messages.map(msg => {
-                                    let messageContent;
-                                    let messageClass = 'text-gray-700';
-                                    
-                                    if (msg.encrypted) {
-                                        if (msg.decryptionFailed) {
-                                            messageContent = '🔒 [Message could not be decrypted - wrong key?]';
-                                            messageClass = 'text-red-600 italic';
-                                        } else {
-                                            messageContent = escapeHtml(msg.decryptedMessage);
-                                        }
-                                    } else {
-                                        messageContent = escapeHtml(msg.message);
-                                    }
-
-                                    if (msg.isSystem) {
-                                        return (
-                                            <div key={msg.id} className="flex space-x-2 md:space-x-3 message-animation p-3 bg-red-50 rounded-lg border border-red-200">
-                                                <img src={msg.avatar} alt={msg.username} className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="font-semibold text-red-700 text-sm md:text-base">SYSTEM ALERT</span>
-                                                        <span className="text-xs md:text-sm text-red-600">{new Date(msg.timestamp).toLocaleTimeString()}</span>
-                                                    </div>
-                                                    <div className="text-red-700 mt-1 message-content text-sm md:text-base font-medium" dangerouslySetInnerHTML={{ __html: messageContent }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <div key={msg.id} className="flex space-x-2 md:space-x-3 message-animation">
-                                            <img src={msg.avatar} alt={msg.username} className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="font-semibold text-gray-900 text-sm md:text-base">{msg.username}</span>
-                                                    <span className="text-xs md:text-sm text-gray-500">{new Date(msg.timestamp).toLocaleTimeString()}</span>
-                                                    {msg.encrypted && <span className="text-xs px-1 py-0.5 bg-purple-100 text-purple-600 rounded">🔒</span>}
-                                                    {msg.authenticated && <span className="text-xs px-1 py-0.5 bg-pink-100 text-pink-600 rounded hidden sm:inline">🛡️</span>}
-                                                </div>
-                                                <div className={`${messageClass} mt-1 message-content text-sm md:text-base`} dangerouslySetInnerHTML={{ __html: messageContent }} />
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-                            <div ref={messagesEndRef} />
+            const renderUser = (user) => (
+                <div key={user.username} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                    <div className="relative">
+                        <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white pulse-online"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 flex items-center text-sm md:text-base">
+                            <span className="truncate">{user.username}</span>
+                            {user.authenticated && <span className="ml-1 text-xs">🛡️</span>}
                         </div>
+                        <div className="text-xs text-gray-500">
+                            {user.username === currentUser ? 'You' : 'Online'}
+                            {user.isTyping && user.username !== currentUser ? ' • typing...' : ''}
+                        </div>
+                    </div>
+                </div>
+            );
 
-                        {/* Typing Indicator */}
-                        {users.some(u => u.isTyping && u.username !== username) && (
-                            <div className="px-4 md:px-6">
-                                <div className="flex items-center space-x-2 text-gray-500 text-sm">
-                                    <span>
-                                        {users.filter(u => u.isTyping && u.username !== username).map(u => u.username).join(', ')} 
-                                        {users.filter(u => u.isTyping && u.username !== username).length === 1 ? ' is' : ' are'} typing
-                                    </span>
-                                    <div className="typing-indicator">
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
+            return (
+                <div className="h-full-ios flex flex-col">
+                    {/* Header */}
+                    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 safe-top">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 md:space-x-4 min-w-0">
+                                <button 
+                                    onClick={() => setMobileDrawerOpen(true)}
+                                    className="md:hidden text-gray-600 hover:text-gray-900 p-1"
+                                >
+                                    <i className="fas fa-bars text-lg"></i>
+                                </button>
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i className="fas fa-user-shield text-white text-sm md:text-base"></i>
+                                </div>
+                                <div className="min-w-0">
+                                    <h1 className="text-base md:text-xl font-bold text-gray-900 flex items-center flex-wrap gap-1">
+                                        <span>GitHub Chat</span>
+                                        <span className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-full">🔒</span>
+                                        <span className="text-xs px-1.5 py-0.5 bg-pink-100 text-pink-600 rounded-full hidden sm:inline">🛡️</span>
+                                    </h1>
+                                    <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm">
+                                        <p className="text-gray-500 truncate hidden sm:block">
+                                            {currentSessionData?.owner}/{currentSessionData?.repo}
+                                        </p>
+                                        <p className="text-purple-600 truncate">{currentUser}</p>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="flex items-center space-x-2 md:space-x-4">
+                                <div className="hidden sm:flex items-center space-x-2 text-xs md:text-sm text-gray-500">
+                                    <div className="w-2 h-2 bg-green-400 rounded-full pulse-online"></div>
+                                    <span>{users.length}</span>
+                                </div>
+                                <button onClick={onShowKeyInfo} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                                    <i className="fas fa-key"></i>
+                                </button>
+                                <button onClick={onSync} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                                    <i className="fas fa-sync-alt"></i>
+                                </button>
+                                <button onClick={onDisconnect} className="text-gray-400 hover:text-red-600 transition-colors p-1">
+                                    <i className="fas fa-sign-out-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Chat Content */}
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Mobile Users Drawer */}
+                        {mobileDrawerOpen && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                                    onClick={() => setMobileDrawerOpen(false)}
+                                />
+                                <div className={`mobile-drawer bg-white z-40 md:hidden ${mobileDrawerOpen ? 'open' : ''}`}>
+                                    <div className="h-full flex flex-col safe-top safe-bottom">
+                                        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                                            <div>
+                                                <h2 className="font-semibold text-gray-900 text-sm">Authenticated Users</h2>
+                                                <p className="text-xs text-gray-500 mt-1">Verified users only</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setMobileDrawerOpen(false)}
+                                                className="text-gray-400 hover:text-gray-600 p-1"
+                                            >
+                                                <i className="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <div className="flex-1 scroll-smooth hide-scrollbar p-4">
+                                            <div className="space-y-2">
+                                                {users.map(renderUser)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
                         )}
 
-                        {/* Message Input */}
-                        <div className="border-t border-gray-200 p-3 md:p-4 safe-bottom">
-                            <form onSubmit={handleSendMessage} className="flex space-x-2 md:space-x-4">
-                                <div className="flex-1">
+                        {/* Desktop Users Sidebar */}
+                        <div className="hidden md:block w-64 bg-white border-r border-gray-200 flex-col">
+                            <div className="h-full flex flex-col">
+                                <div className="p-4 border-b border-gray-200">
+                                    <h2 className="font-semibold text-gray-900">Authenticated Users</h2>
+                                    <p className="text-xs text-gray-500 mt-1">Only verified users can send messages</p>
+                                </div>
+                                <div className="flex-1 scroll-smooth p-4">
+                                    <div className="space-y-2">
+                                        {users.map(renderUser)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Chat Messages Area */}
+                        <div className="flex-1 flex flex-col">
+                            {/* Messages */}
+                            <div className="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6 space-y-3 md:space-y-4">
+                                {messages.length === 0 ? (
+                                    <div className="text-center text-gray-500 text-xs md:text-sm">
+                                        <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
+                                        <p>All messages are encrypted and users are authenticated</p>
+                                    </div>
+                                ) : (
+                                    messages.map(renderMessage)
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Typing Indicator */}
+                            {typingUsers.length > 0 && (
+                                <div className="px-4 md:px-6">
+                                    <div className="flex items-center space-x-2 text-gray-500 text-sm">
+                                        <span>
+                                            {typingUsers.length === 1 
+                                                ? `${typingUsers[0].username} is typing`
+                                                : `${typingUsers.map(u => u.username).join(', ')} are typing`}
+                                        </span>
+                                        <div className="typing-indicator">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Message Input */}
+                            <div className="border-t border-gray-200 p-3 md:p-4 safe-bottom">
+                                <form onSubmit={handleSendMessage} className="flex space-x-2 md:space-x-4">
                                     <input 
                                         type="text" 
                                         value={messageInput}
-                                        onChange={(e) => setMessageInput(e.target.value)}
-                                        onInput={handleTyping}
+                                        onChange={(e) => {
+                                            setMessageInput(e.target.value);
+                                            handleTyping();
+                                        }}
                                         placeholder="Type a message..." 
-                                        className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm md:text-base"
+                                        className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm md:text-base"
                                         autoComplete="off"
                                     />
-                                </div>
-                                <button 
-                                    type="submit" 
-                                    className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all"
-                                >
-                                    <i className="fas fa-paper-plane"></i>
-                                </button>
-                            </form>
+                                    <button 
+                                        type="submit" 
+                                        className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all"
+                                    >
+                                        <i className="fas fa-paper-plane"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            );
+        };
 
-            {/* Toasts */}
-            <div className="fixed top-4 right-4 left-4 md:left-auto space-y-2 z-50 safe-top">
-                {toasts.map(toast => (
-                    <Toast
-                        key={toast.id}
-                        message={toast.message}
-                        type={toast.type}
-                        onClose={() => removeToast(toast.id)}
-                    />
-                ))}
-            </div>
-        </>
-    );
+        // Main App Component
+        const GitHubChatApp = () => {
+            const [api] = useState(() => new GitHubChatAPI());
+            const [sessionManager] = useState(() => new GitHubSessionManager());
+            
+            const [sessions, setSessions] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [showSessionModal, setShowSessionModal] = useState(true);
+            const [showConnectionModal, setShowConnectionModal] = useState(false);
+            const [showPasswordModal, setShowPasswordModal] = useState(false);
+            const [showPanicModal, setShowPanicModal] = useState(false);
+            const [showImportModal, setShowImportModal] = useState(false);
+            const [showShareModal, setShowShareModal] = useState(false);
+            const [showKeyInfoModal, setShowKeyInfoModal] = useState(false);
+            const [showChatInterface, setShowChatInterface] = useState(false);
+            
+            const [connectionForm, setConnectionForm] = useState({});
+            const [pendingSession, setPendingSession] = useState(null);
+            const [currentUser, setCurrentUser] = useState(null);
+            const [currentSessionData, setCurrentSessionData] = useState(null);
+            const [messages, setMessages] = useState([]);
+            const [users, setUsers] = useState([]);
+            const [messageInput, setMessageInput] = useState('');
+            const [toasts, setToasts] = useState([]);
+            const [isConnecting, setIsConnecting] = useState(false);
+            const [isAuthenticating, setIsAuthenticating] = useState(false);
+            const [shareData, setShareData] = useState(null);
+            const [typingUsers, setTypingUsers] = useState([]);
+            
+            const pollTimerRef = useRef(null);
+            const userPollTimerRef = useRef(null);
+            const typingTimerRef = useRef(null);
+            const lastTypingStateRef = useRef(false);
+            const lastMessageTimeRef = useRef(null);
+
+            // Initialize
+            useEffect(() => {
+                const setViewportHeight = () => {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', `${vh}px`);
+                };
+                
+                setViewportHeight();
+                window.addEventListener('resize', setViewportHeight);
+                window.addEventListener('orientationchange', setViewportHeight);
+                
+                const handleVisibilityChange = () => {
+                    api.setPageVisibility(!document.hidden);
+                    if (!document.hidden && currentUser && api.isConnected) {
+                        api.sendHeartbeat(currentUser);
+                    }
+                };
+                
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                
+                const handleUnload = () => {
+                    if (currentUser && api.isConnected) {
+                        api.leaveRoom(currentUser);
+                    }
+                };
+                
+                window.addEventListener('beforeunload', handleUnload);
+                
+                loadSessions();
+                
+                return () => {
+                    window.removeEventListener('resize', setViewportHeight);
+                    window.removeEventListener('orientationchange', setViewportHeight);
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                    window.removeEventListener('beforeunload', handleUnload);
+                    stopPolling();
+                };
+            }, [currentUser]);
+
+            const loadSessions = async () => {
+                setIsLoading(true);
+                const validSessions = await sessionManager.validateSessions(GitHubStorageAPI);
+                setSessions(validSessions);
+                setIsLoading(false);
+            };
+
+            const showToast = (message, type = 'info') => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+            };
+
+            const removeToast = (id) => {
+                setToasts(prev => prev.filter(t => t.id !== id));
+            };
+
+            const handlePanic = async () => {
+                const lastUsername = sessionManager.getLastUsername();
+                
+                if (api.isConnected && api.encryptionKey) {
+                    try {
+                        await api.sendMessage('SYSTEM', 
+                            `⚠️ EMERGENCY: User "${lastUsername}" has triggered the panic button and wiped all local data!`,
+                            'general', true);
+                    } catch (error) {
+                        console.error('Could not send panic message:', error);
+                    }
+                }
+                
+                sessionManager.clearAllData();
+                showToast('🚨 All local data has been wiped!', 'warning');
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            };
+
+            const handlePasswordAuth = async (password) => {
+    if (!pendingSession) return;
+    
+    if (password !== password.toLowerCase()) {
+        showToast('ℹ️ Converting password to lowercase for authentication', 'info');
+    }
+    
+    setIsAuthenticating(true);
+    
+    try {
+        // Hole die vollständige Session mit dekodierten Werten
+        const fullSession = sessionManager.getSession(pendingSession.sessionId);
+        if (!fullSession) {
+            throw new Error('Session not found');
+        }
+        
+        await api.connect(fullSession.owner, fullSession.repo, fullSession.token);
+        await api.initializeChat();
+        await api.setupEncryption(
+            fullSession.encryptionMethod, 
+            fullSession.token, 
+            fullSession.customKey
+        );
+        await api.authenticateUser(fullSession.username, password);
+        await api.joinRoom(fullSession.username);
+        
+        setCurrentUser(fullSession.username);
+        setCurrentSessionData(fullSession);
+        setShowPasswordModal(false);
+        setShowChatInterface(true);
+        
+        await loadMessages();
+        await loadUsers();
+        startPolling();
+        
+        showToast('🔒🛡️ Authenticated successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Authentication error:', error);
+        showToast(error.message.includes('password') ? 'Incorrect password' : 'Authentication failed: ' + error.message, 'error');
+    } finally {
+        setIsAuthenticating(false);
+    }
 };
 
-// Render the app
-ReactDOM.render(<ChatApp />, document.getElementById('root'));
-</script>
+            const handleConnection = async (formData) => {
+                if (isConnecting) return;
+                setIsConnecting(true);
+                
+                const { repoOwner, repoName, githubToken, username, userPassword, encryptionMethod, customKey } = formData;
+                
+                if (userPassword !== userPassword.toLowerCase()) {
+                    showToast('⚠️ Password will be converted to lowercase for encryption compatibility', 'warning');
+                }
+                
+                if (encryptionMethod === 'custom' && customKey && customKey !== customKey.toLowerCase()) {
+                    showToast('⚠️ Custom key will be converted to lowercase for encryption compatibility', 'warning');
+                }
+                
+                try {
+                    await api.connect(repoOwner, repoName, githubToken);
+                    await api.setupEncryption(encryptionMethod, githubToken, customKey);
+                    await api.initializeChat();
+                    
+                    let userRegistered = false;
+                    try {
+                        await api.registerUser(username, userPassword);
+                        userRegistered = true;
+                        showToast('🆕 User registered successfully!', 'success');
+                    } catch (error) {
+                        if (!error.message.includes('Username already exists')) {
+                            throw error;
+                        }
+                    }
+                    
+                    await api.authenticateUser(username, userPassword);
+                    
+                    if (!userRegistered) {
+                        showToast('🔓 User authenticated successfully!', 'success');
+                    }
+                    
+                    await api.joinRoom(username);
+                    
+                    setCurrentUser(username);
+                    sessionManager.saveSession(username, repoOwner, repoName, githubToken, encryptionMethod, customKey);
+                    
+                    setCurrentSessionData({
+                        owner: repoOwner,
+                        repo: repoName,
+                        token: githubToken,
+                        encryptionMethod,
+                        customKey
+                    });
+                    
+                    setShowConnectionModal(false);
+                    setShowChatInterface(true);
+                    
+                    await loadMessages();
+                    await loadUsers();
+                    startPolling();
+                    
+                    showToast('🔒🛡️ Authenticated encrypted chat ready!', 'success');
+                    
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    showToast('Failed to create authenticated chat: ' + error.message, 'error');
+                } finally {
+                    setIsConnecting(false);
+                }
+            };
+
+            const handleSendMessage = async (message) => {
+                if (!message.trim()) return;
+                
+                if (typingTimerRef.current) {
+                    clearTimeout(typingTimerRef.current);
+                    lastTypingStateRef.current = false;
+                    api.setTypingStatus(currentUser, false);
+                }
+                
+                try {
+                    await api.sendMessage(currentUser, message, 'general');
+                    await loadMessages();
+                } catch (error) {
+                    console.error('Send message error:', error);
+                    showToast('Failed to send authenticated message', 'error');
+                }
+            };
+
+            const handleTyping = () => {
+                if (!currentUser || !api.isConnected) return;
+                
+                if (!lastTypingStateRef.current) {
+                    lastTypingStateRef.current = true;
+                    api.setTypingStatus(currentUser, true);
+                }
+                
+                if (typingTimerRef.current) {
+                    clearTimeout(typingTimerRef.current);
+                }
+                
+                typingTimerRef.current = setTimeout(() => {
+                    lastTypingStateRef.current = false;
+                    api.setTypingStatus(currentUser, false);
+                }, api.typingTimeout);
+            };
+
+            const loadMessages = async () => {
+                try {
+                    const msgs = await api.getMessages('general');
+                    setMessages(msgs);
+                    
+                    if (msgs.length > 0) {
+                        lastMessageTimeRef.current = msgs[msgs.length - 1].timestamp;
+                    }
+                } catch (error) {
+                    console.error('Load messages error:', error);
+                }
+            };
+
+            const loadUsers = async () => {
+                try {
+                    const userList = await api.getUsers();
+                    setUsers(userList);
+                    
+                    const typing = userList.filter(u => u.isTyping && u.username !== currentUser);
+                    setTypingUsers(typing);
+                } catch (error) {
+                    console.error('Load users error:', error);
+                }
+            };
+
+            const startPolling = () => {
+                pollTimerRef.current = setInterval(async () => {
+                    try {
+                        const msgs = await api.getMessages('general');
+                        if (msgs.length > 0) {
+                            const latestTimestamp = msgs[msgs.length - 1].timestamp;
+                            if (!lastMessageTimeRef.current || latestTimestamp > lastMessageTimeRef.current) {
+                                setMessages(msgs);
+                                lastMessageTimeRef.current = latestTimestamp;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Message polling error:', error);
+                    }
+                }, api.pollInterval);
+                
+                userPollTimerRef.current = setInterval(loadUsers, api.pollInterval);
+            };
+
+            const stopPolling = () => {
+                if (pollTimerRef.current) {
+                    clearInterval(pollTimerRef.current);
+                    pollTimerRef.current = null;
+                }
+                if (userPollTimerRef.current) {
+                    clearInterval(userPollTimerRef.current);
+                    userPollTimerRef.current = null;
+                }
+            };
+
+            const handleDisconnect = async () => {
+                if (!confirm('Are you sure you want to disconnect from the authenticated chat?')) {
+                    return;
+                }
+                
+                stopPolling();
+                
+                if (currentUser && api.isConnected) {
+                    try {
+                        await api.leaveRoom(currentUser);
+                    } catch (error) {
+                        console.error('Error leaving room:', error);
+                    }
+                }
+                
+                api.disconnect();
+                
+                setCurrentUser(null);
+                setCurrentSessionData(null);
+                setPendingSession(null);
+                setMessages([]);
+                setUsers([]);
+                setShowChatInterface(false);
+                setShowSessionModal(true);
+                
+                loadSessions();
+                
+                showToast('Disconnected from authenticated chat', 'info');
+            };
+
+            const handleSync = async () => {
+                try {
+                    await loadMessages();
+                    await loadUsers();
+                    showToast('🔒🛡️ Authenticated data synced!', 'success');
+                } catch (error) {
+                    showToast('Sync failed', 'error');
+                }
+            };
+
+            const handleImport = async (encryptedData, decryptionKey) => {
+                try {
+                    const encryption = new ChatEncryption();
+                    const key = await encryption.generateKey(decryptionKey);
+                    const decryptedJson = await encryption.decrypt(encryptedData, key);
+                    
+                    if (!decryptedJson) {
+                        throw new Error('Failed to decrypt data - wrong key?');
+                    }
+                    
+                    const sessionData = JSON.parse(decryptedJson);
+                    
+                    setConnectionForm(sessionData);
+                    setShowImportModal(false);
+                    setShowConnectionModal(true);
+                    
+                    showToast('Session data imported successfully! Please enter your username and password.', 'success');
+                    
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showToast('Failed to import session: ' + error.message, 'error');
+                }
+            };
+
+            const handleShare = async (shareKey) => {
+                if (!currentSessionData) {
+                    showToast('No active session to share', 'error');
+                    return;
+                }
+                
+                try {
+                    const encryption = new ChatEncryption();
+                    const key = await encryption.generateKey(shareKey);
+                    const dataToShare = {
+                        owner: currentSessionData.owner,
+                        repo: currentSessionData.repo,
+                        token: currentSessionData.token,
+                        encryptionMethod: currentSessionData.encryptionMethod,
+                        customKey: currentSessionData.customKey || null
+                    };
+                    
+                    const encryptedData = await encryption.encrypt(JSON.stringify(dataToShare), key);
+                    setShareData(encryptedData);
+                    
+                    showToast('Session data encrypted! Share it along with the key.', 'success');
+                    
+                } catch (error) {
+                    console.error('Share error:', error);
+                    showToast('Failed to encrypt session data: ' + error.message, 'error');
+                }
+            };
+
+            // Session Modal content
+            const SessionModalContent = () => (
+                <>
+                    {isLoading ? (
+                        <div className="text-center py-8">
+                            <i className="fas fa-spinner spinner text-gray-400 text-2xl mb-4"></i>
+                            <p className="text-gray-500">Validating saved sessions...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {sessions.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Saved Sessions</h3>
+                                    <div className="space-y-3">
+                                        {sessions.map(session => (
+                                            <div
+                                                key={session.sessionId}
+                                                className="session-card bg-gray-50 hover:bg-gray-100 p-3 md:p-4 rounded-lg border border-gray-200 cursor-pointer"
+                                               onClick={() => {
+                                                // Stelle sicher, dass die Session korrekt geladen wird
+                                                const fullSession = sessionManager.getSession(session.sessionId);
+                                                if (fullSession) {
+                                                    setPendingSession(fullSession);
+                                                    setShowSessionModal(false);
+                                                    setShowPasswordModal(true);
+                                                } else {
+                                                    showToast('Failed to load session', 'error');
+                                                }
+                                            }}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                                        <img 
+                                                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${session.username}`}
+                                                            alt={session.username} 
+                                                            className="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0"
+                                                        />
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-semibold text-gray-900 text-sm md:text-base truncate">{session.username}</div>
+                                                            <div className="text-xs md:text-sm text-gray-600 truncate">{session.owner}/{session.repo}</div>
+                                                            <div className="text-xs text-gray-500 flex flex-wrap items-center gap-1 mt-1">
+                                                                <span className="hidden sm:inline">Last: {new Date(session.lastUsed).toLocaleDateString()}</span>
+                                                                <span className="px-1 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">🔒</span>
+                                                                <span className="px-1 py-0.5 bg-pink-100 text-pink-600 rounded text-xs">🛡️</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (confirm('Are you sure you want to remove this saved session?')) {
+                                                                sessionManager.removeSession(session.sessionId);
+                                                                loadSessions();
+                                                                showToast('Session removed', 'info');
+                                                            }
+                                                        }}
+                                                        className="text-red-400 hover:text-red-600 p-2 ml-2"
+                                                    >
+                                                        <i className="fas fa-trash text-sm"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-3">
+                                <button 
+                                    onClick={() => {
+                                        setShowSessionModal(false);
+                                        setShowConnectionModal(true);
+                                    }}
+                                    className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-medium hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center text-sm md:text-base"
+                                >
+                                    <i className="fas fa-plus mr-2"></i>
+                                    Create or Join Chat
+                                </button>
+                                
+                                <button 
+                                    onClick={() => {
+                                        setShowSessionModal(false);
+                                        setShowImportModal(true);
+                                    }}
+                                    className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition-all flex items-center justify-center text-sm md:text-base"
+                                >
+                                    <i className="fas fa-download mr-2"></i>
+                                    Import Shared Session
+                                </button>
+                            </div>
+                            
+                            <div className="mt-8 pt-4 border-t border-gray-200">
+                                <button 
+                                    onClick={() => setShowPanicModal(true)}
+                                    className="w-full panic-button text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center text-sm md:text-base"
+                                >
+                                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                                    Emergency Data Wipe
+                                </button>
+                                <p className="text-xs text-gray-500 text-center mt-2">⚠️ Deletes all local data immediately</p>
+                            </div>
+                        </>
+                    )}
+                </>
+            );
+
+            // Render
+            return (
+                <div className="h-full-ios">
+
+                    {/* Toast Container - mit höherem z-index */}
+                    <div className="fixed top-4 right-4 left-4 md:left-auto space-y-2 z-[100] safe-top pointer-events-none">
+                        {toasts.map(toast => (
+                            <div key={toast.id} className="pointer-events-auto">
+                                <Toast
+                                    message={toast.message}
+                                    type={toast.type}
+                                    onClose={() => removeToast(toast.id)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Session Selection Modal */}
+                    {showSessionModal && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-backdrop">
+                            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+                                <div className="p-6 md:p-8 border-b border-gray-200">
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <i className="fas fa-user-shield text-white text-2xl md:text-3xl"></i>
+                                        </div>
+                                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">GitHub Chat</h1>
+                                        <p className="text-sm md:text-base text-gray-600">Secure messaging with user authentication</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 md:p-6 scroll-smooth hide-scrollbar max-h-96">
+                                    <SessionModalContent />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Other Modals */}
+                    <PanicModal 
+                        show={showPanicModal}
+                        onConfirm={handlePanic}
+                        onCancel={() => setShowPanicModal(false)}
+                    />
+
+                    <ImportModal 
+                        show={showImportModal}
+                        onClose={() => {
+                            setShowImportModal(false);
+                            setShowSessionModal(true);
+                        }}
+                        onImport={handleImport}
+                        showToast={showToast}
+                    />
+
+                    <PasswordModal 
+                        show={showPasswordModal}
+                        onClose={() => {
+                            setShowPasswordModal(false);
+                            setShowSessionModal(true);
+                            setPendingSession(null);
+                        }}
+                        pendingSession={pendingSession}
+                        onAuthenticate={handlePasswordAuth}
+                        isAuthenticating={isAuthenticating}
+                    />
+
+                    <ConnectionModal 
+                        show={showConnectionModal}
+                        onClose={() => {
+                            setShowConnectionModal(false);
+                            setShowSessionModal(true);
+                        }}
+                        onConnect={handleConnection}
+                        isConnecting={isConnecting}
+                        initialData={connectionForm}
+                    />
+
+                    <KeyInfoModal 
+                        show={showKeyInfoModal}
+                        onClose={() => setShowKeyInfoModal(false)}
+                        currentSessionData={currentSessionData}
+                        onShareSession={() => {
+                            setShowKeyInfoModal(false);
+                            setShowShareModal(true);
+                        }}
+                        showToast={showToast}
+                    />
+
+                    <ShareSessionModal 
+                        show={showShareModal}
+                        onClose={() => {
+                            setShowShareModal(false);
+                            setShareData(null);
+                        }}
+                        shareData={shareData}
+                        onGenerateShare={handleShare}
+                        showToast={showToast}
+                    />
+
+                    {/* Chat Interface */}
+                    {showChatInterface && (
+                        <ChatInterface 
+                            currentUser={currentUser}
+                            currentSessionData={currentSessionData}
+                            messages={messages}
+                            users={users}
+                            onSendMessage={handleSendMessage}
+                            onDisconnect={handleDisconnect}
+                            onSync={handleSync}
+                            onShowKeyInfo={() => setShowKeyInfoModal(true)}
+                            typingUsers={typingUsers}
+                            showToast={showToast}
+                            onTyping={handleTyping}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        // Mount the app
+        ReactDOM.render(<GitHubChatApp />, document.getElementById('root'));
+    </script>
 </body>
 </html>
