@@ -274,6 +274,30 @@
                 transform: translateY(-10px);
             }
         }
+
+          
+        /* NEUE TOAST ANIMATIONEN HIER HINZUFÜGEN */
+        @keyframes slide-in-right {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slide-out-right {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body class="h-full-ios bg-gray-50 prevent-overscroll">
@@ -281,6 +305,106 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+                // ============================================================================
+        // 1. TOAST MANAGER - GANZ OBEN VOR ALLEN ANDEREN KLASSEN
+        // ============================================================================
+        
+        class ToastManager {
+            constructor() {
+                this.toasts = [];
+                this.listeners = [];
+                this.idCounter = 0;
+                this.timers = new Map();
+            }
+            
+            subscribe(listener) {
+                this.listeners.push(listener);
+                return () => {
+                    this.listeners = this.listeners.filter(l => l !== listener);
+                };
+            }
+            
+            notify() {
+                this.listeners.forEach(listener => listener([...this.toasts]));
+            }
+            
+            show(message, type = 'info', duration = 3000) {
+                const id = this.idCounter++;
+                const toast = { 
+                    id, 
+                    message, 
+                    type, 
+                    duration,
+                    createdAt: Date.now()
+                };
+                
+                this.toasts.push(toast);
+                this.notify();
+                
+                const timer = setTimeout(() => {
+                    this.remove(id);
+                }, duration);
+                
+                this.timers.set(id, timer);
+                
+                return id;
+            }
+            
+            remove(id) {
+                if (this.timers.has(id)) {
+                    clearTimeout(this.timers.get(id));
+                    this.timers.delete(id);
+                }
+                
+                this.toasts = this.toasts.filter(t => t.id !== id);
+                this.notify();
+            }
+            
+            clear() {
+                this.timers.forEach(timer => clearTimeout(timer));
+                this.timers.clear();
+                this.toasts = [];
+                this.notify();
+            }
+            
+            success(message, duration = 3000) {
+                return this.show(message, 'success', duration);
+            }
+            
+            error(message, duration = 5000) {
+                return this.show(message, 'error', duration);
+            }
+            
+            warning(message, duration = 4000) {
+                return this.show(message, 'warning', duration);
+            }
+            
+            info(message, duration = 3000) {
+                return this.show(message, 'info', duration);
+            }
+        }
+
+        // Globale Instanz
+        const toastManager = new ToastManager();
+
+        // ============================================================================
+        // 2. TOAST HOOK - NACH DEM MANAGER
+        // ============================================================================
+        
+        const useToasts = () => {
+            const [toasts, setToasts] = useState([]);
+            
+            useEffect(() => {
+                const unsubscribe = toastManager.subscribe(setToasts);
+                setToasts(toastManager.toasts);
+                return () => {
+                    unsubscribe();
+                };
+            }, []);
+            
+            return toasts;
+        };
 
         // ============================================================================
         // HELPER CLASSES (Same as your original)
@@ -977,23 +1101,114 @@ class GitHubSessionManager {
         // REACT COMPONENTS
         // ============================================================================
 
-        // Toast Component
-        const Toast = ({ message, type, onClose }) => {
+
+
+        // ============================================================================
+        // 4. TOAST KOMPONENTEN - VOR DEN ANDEREN REACT KOMPONENTEN
+        // ============================================================================
+        
+        const Toast = ({ toast, onRemove }) => {
+            const [isLeaving, setIsLeaving] = useState(false);
+            const [progress, setProgress] = useState(100);
+            const progressInterval = useRef(null);
+            
             const bgColor = {
                 success: 'bg-green-500',
                 error: 'bg-red-500',
                 warning: 'bg-yellow-500',
                 info: 'bg-blue-500'
-            }[type] || 'bg-blue-500';
-
+            }[toast.type] || 'bg-blue-500';
+            
+            const icon = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            }[toast.type] || 'fa-info-circle';
+            
             useEffect(() => {
-                const timer = setTimeout(onClose, 3000);
-                return () => clearTimeout(timer);
-            }, [onClose]);
-
+                const startTime = Date.now();
+                const endTime = startTime + toast.duration;
+                
+                progressInterval.current = setInterval(() => {
+                    const now = Date.now();
+                    const remaining = Math.max(0, endTime - now);
+                    const newProgress = (remaining / toast.duration) * 100;
+                    setProgress(newProgress);
+                    
+                    if (newProgress <= 0) {
+                        clearInterval(progressInterval.current);
+                    }
+                }, 50);
+                
+                const exitTimer = setTimeout(() => {
+                    setIsLeaving(true);
+                }, toast.duration - 300);
+                
+                return () => {
+                    clearInterval(progressInterval.current);
+                    clearTimeout(exitTimer);
+                };
+            }, [toast.duration]);
+            
+            const handleClick = () => {
+                setIsLeaving(true);
+                setTimeout(() => {
+                    onRemove(toast.id);
+                }, 300);
+            };
+            
             return (
-                <div className={`${bgColor} text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 text-sm md:text-base`}>
-                    {message}
+                <div 
+                    className={`
+                        ${bgColor} text-white rounded-lg shadow-lg overflow-hidden
+                        transform transition-all duration-300 cursor-pointer
+                        ${isLeaving 
+                            ? 'translate-x-full opacity-0 scale-95' 
+                            : 'translate-x-0 opacity-100 scale-100'
+                        }
+                    `}
+                    onClick={handleClick}
+                >
+                    <div className="px-4 py-3 flex items-center space-x-3">
+                        <i className={`fas ${icon} text-lg`}></i>
+                        <span className="flex-1 text-sm md:text-base">{toast.message}</span>
+                        <button 
+                            className="text-white/80 hover:text-white ml-2"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleClick();
+                            }}
+                        >
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div className="h-1 bg-black/20">
+                        <div 
+                            className="h-full bg-white/30 transition-all duration-100 ease-linear"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        const ToastContainer = () => {
+            const toasts = useToasts();
+            
+            return (
+                <div 
+                    className="fixed top-4 right-4 left-4 md:left-auto md:w-96 space-y-2 safe-top pointer-events-none"
+                    style={{ zIndex: 99999 }}
+                >
+                    {toasts.map(toast => (
+                        <div key={toast.id} className="pointer-events-auto">
+                            <Toast 
+                                toast={toast} 
+                                onRemove={(id) => toastManager.remove(id)}
+                            />
+                        </div>
+                    ))}
                 </div>
             );
         };
@@ -1041,7 +1256,7 @@ class GitHubSessionManager {
         };
 
         // Import Modal Component
-        const ImportModal = ({ show, onClose, onImport, showToast }) => {
+        const ImportModal = ({ show, onClose, onImport }) => {
             const [encryptedData, setEncryptedData] = useState('');
             const [decryptionKey, setDecryptionKey] = useState('');
 
@@ -1111,7 +1326,7 @@ class GitHubSessionManager {
         };
 
         // Key Info Modal Component
-        const KeyInfoModal = ({ show, onClose, currentSessionData, onShareSession, showToast }) => {
+        const KeyInfoModal = ({ show, onClose, currentSessionData, onShareSession }) => {
             if (!show) return null;
 
             const getEncryptionMethodText = () => {
@@ -1189,7 +1404,7 @@ class GitHubSessionManager {
         };
 
         // Share Session Modal Component
-        const ShareSessionModal = ({ show, onClose, shareData, onGenerateShare, showToast }) => {
+        const ShareSessionModal = ({ show, onClose, shareData, onGenerateShare }) => {
             const [shareKey, setShareKey] = useState('');
             const [dataGenerated, setDataGenerated] = useState(false);
 
@@ -1866,7 +2081,6 @@ class GitHubSessionManager {
             const [messages, setMessages] = useState([]);
             const [users, setUsers] = useState([]);
             const [messageInput, setMessageInput] = useState('');
-            const [toasts, setToasts] = useState([]);
             const [isConnecting, setIsConnecting] = useState(false);
             const [isAuthenticating, setIsAuthenticating] = useState(false);
             const [shareData, setShareData] = useState(null);
@@ -1877,6 +2091,23 @@ class GitHubSessionManager {
             const typingTimerRef = useRef(null);
             const lastTypingStateRef = useRef(false);
             const lastMessageTimeRef = useRef(null);
+
+            // WICHTIG: Verwende den globalen toastManager statt lokaler state
+            const showToast = useCallback((message, type = 'info', duration) => {
+                switch(type) {
+                    case 'success':
+                        toastManager.success(message, duration);
+                        break;
+                    case 'error':
+                        toastManager.error(message, duration);
+                        break;
+                    case 'warning':
+                        toastManager.warning(message, duration);
+                        break;
+                    default:
+                        toastManager.info(message, duration);
+                }
+            }, []);
 
             // Initialize
             useEffect(() => {
@@ -1924,14 +2155,8 @@ class GitHubSessionManager {
                 setIsLoading(false);
             };
 
-            const showToast = (message, type = 'info') => {
-                const id = Date.now();
-                setToasts(prev => [...prev, { id, message, type }]);
-            };
-
-            const removeToast = (id) => {
-                setToasts(prev => prev.filter(t => t.id !== id));
-            };
+            
+           
 
             const handlePanic = async () => {
                 const lastUsername = sessionManager.getLastUsername();
@@ -2358,18 +2583,9 @@ class GitHubSessionManager {
             return (
                 <div className="h-full-ios">
 
-                    {/* Toast Container - mit höherem z-index */}
-                    <div className="fixed top-4 right-4 left-4 md:left-auto space-y-2 z-[100] safe-top pointer-events-none">
-                        {toasts.map(toast => (
-                            <div key={toast.id} className="pointer-events-auto">
-                                <Toast
-                                    message={toast.message}
-                                    type={toast.type}
-                                    onClose={() => removeToast(toast.id)}
-                                />
-                            </div>
-                        ))}
-                    </div>
+                    
+                    <ToastContainer/>
+                    
 
                     {/* Session Selection Modal */}
                     {showSessionModal && (
@@ -2392,6 +2608,8 @@ class GitHubSessionManager {
                         </div>
                     )}
 
+                    
+
                     {/* Other Modals */}
                     <PanicModal 
                         show={showPanicModal}
@@ -2406,7 +2624,6 @@ class GitHubSessionManager {
                             setShowSessionModal(true);
                         }}
                         onImport={handleImport}
-                        showToast={showToast}
                     />
 
                     <PasswordModal 
@@ -2440,7 +2657,6 @@ class GitHubSessionManager {
                             setShowKeyInfoModal(false);
                             setShowShareModal(true);
                         }}
-                        showToast={showToast}
                     />
 
                     <ShareSessionModal 
@@ -2451,7 +2667,6 @@ class GitHubSessionManager {
                         }}
                         shareData={shareData}
                         onGenerateShare={handleShare}
-                        showToast={showToast}
                     />
 
                     {/* Chat Interface */}
@@ -2466,8 +2681,7 @@ class GitHubSessionManager {
                             onSync={handleSync}
                             onShowKeyInfo={() => setShowKeyInfoModal(true)}
                             typingUsers={typingUsers}
-                            showToast={showToast}
-                            onTyping={handleTyping}
+                                onTyping={handleTyping}
                         />
                     )}
                 </div>
