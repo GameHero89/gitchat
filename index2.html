@@ -1789,7 +1789,7 @@ class GitHubSessionManager {
             );
         };
 
-        // Chat Interface Component
+        // Chat Interface Component mit besserem Mobile Keyboard Handling
         const ChatInterface = ({ 
             currentUser, 
             currentSessionData,
@@ -1800,23 +1800,95 @@ class GitHubSessionManager {
             onSync, 
             onShowKeyInfo,
             typingUsers,
-            showToast
+            onTyping
         }) => {
             const [messageInput, setMessageInput] = useState('');
             const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+            const [isInputFocused, setIsInputFocused] = useState(false);
+            const [keyboardHeight, setKeyboardHeight] = useState(0);
+            
             const messagesEndRef = useRef(null);
-            const typingTimerRef = useRef(null);
+            const messageInputRef = useRef(null);
+            const messagesContainerRef = useRef(null);
+
+            // Detect keyboard height and adjust layout
+            useEffect(() => {
+                const handleViewportChange = () => {
+                    if (window.visualViewport) {
+                        const viewport = window.visualViewport;
+                        const keyboardH = window.innerHeight - viewport.height;
+                        setKeyboardHeight(keyboardH);
+                        
+                        // Scroll to bottom when keyboard opens
+                        if (keyboardH > 0) {
+                            setTimeout(() => {
+                                scrollToBottom();
+                            }, 100);
+                        }
+                    }
+                };
+
+                const handleFocus = () => {
+                    setIsInputFocused(true);
+                    // iOS specific: Scroll into view
+                    setTimeout(() => {
+                        if (messageInputRef.current) {
+                            messageInputRef.current.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'end' 
+                            });
+                        }
+                        scrollToBottom();
+                    }, 300);
+                };
+
+                const handleBlur = () => {
+                    setIsInputFocused(false);
+                };
+
+                // Visual Viewport API for better keyboard detection
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', handleViewportChange);
+                    window.visualViewport.addEventListener('scroll', handleViewportChange);
+                }
+
+                // Traditional resize as fallback
+                window.addEventListener('resize', handleViewportChange);
+
+                // Input focus/blur events
+                const inputElement = messageInputRef.current;
+                if (inputElement) {
+                    inputElement.addEventListener('focus', handleFocus);
+                    inputElement.addEventListener('blur', handleBlur);
+                }
+
+                return () => {
+                    if (window.visualViewport) {
+                        window.visualViewport.removeEventListener('resize', handleViewportChange);
+                        window.visualViewport.removeEventListener('scroll', handleViewportChange);
+                    }
+                    window.removeEventListener('resize', handleViewportChange);
+                    
+                    if (inputElement) {
+                        inputElement.removeEventListener('focus', handleFocus);
+                        inputElement.removeEventListener('blur', handleBlur);
+                    }
+                };
+            }, []);
 
             const handleSendMessage = (e) => {
                 e.preventDefault();
                 if (messageInput.trim()) {
                     onSendMessage(messageInput);
                     setMessageInput('');
+                    // Keep focus on input after sending (optional)
+                    if (messageInputRef.current && window.innerWidth < 768) {
+                        messageInputRef.current.focus();
+                    }
                 }
             };
 
             const handleTyping = () => {
-                // Typing logic handled in parent
                 if (onTyping) onTyping();
             };
 
@@ -1859,7 +1931,7 @@ class GitHubSessionManager {
                                     <span className="text-xs md:text-sm text-red-600">{new Date(msg.timestamp).toLocaleTimeString()}</span>
                                 </div>
                                 <div className="text-red-700 mt-1 message-content text-sm md:text-base font-medium" 
-                                     dangerouslySetInnerHTML={{__html: messageContent}} />
+                                    dangerouslySetInnerHTML={{__html: messageContent}} />
                             </div>
                         </div>
                     );
@@ -1876,7 +1948,7 @@ class GitHubSessionManager {
                                 {msg.authenticated && <span className="text-xs px-1 py-0.5 bg-pink-100 text-pink-600 rounded hidden sm:inline">🛡️</span>}
                             </div>
                             <div className={`${messageClass} mt-1 message-content text-sm md:text-base`}
-                                 dangerouslySetInnerHTML={{__html: messageContent}} />
+                                dangerouslySetInnerHTML={{__html: messageContent}} />
                         </div>
                     </div>
                 );
@@ -1901,10 +1973,21 @@ class GitHubSessionManager {
                 </div>
             );
 
+            // Calculate dynamic styles for mobile keyboard
+            const inputContainerStyle = {
+                paddingBottom: isInputFocused && keyboardHeight > 0 ? `${keyboardHeight}px` : undefined,
+                transition: 'padding-bottom 0.3s ease-out'
+            };
+
+            const messagesContainerStyle = {
+                paddingBottom: isInputFocused && keyboardHeight > 0 ? '20px' : '0',
+                transition: 'padding-bottom 0.3s ease-out'
+            };
+
             return (
                 <div className="h-full-ios flex flex-col">
                     {/* Header */}
-                    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 safe-top">
+                    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 safe-top flex-shrink-0">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2 md:space-x-4 min-w-0">
                                 <button 
@@ -1949,8 +2032,8 @@ class GitHubSessionManager {
                         </div>
                     </header>
 
-                    {/* Chat Content */}
-                    <div className="flex-1 flex overflow-hidden">
+                    {/* Chat Content - Adjusted for keyboard */}
+                    <div className="flex-1 flex overflow-hidden" style={{ marginBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0' }}>
                         {/* Mobile Users Drawer */}
                         {mobileDrawerOpen && (
                             <>
@@ -1999,8 +2082,12 @@ class GitHubSessionManager {
 
                         {/* Chat Messages Area */}
                         <div className="flex-1 flex flex-col">
-                            {/* Messages */}
-                            <div className="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6 space-y-3 md:space-y-4">
+                            {/* Messages - with dynamic padding */}
+                            <div 
+                                ref={messagesContainerRef}
+                                className="flex-1 scroll-smooth hide-scrollbar p-4 md:p-6 space-y-3 md:space-y-4"
+                                style={messagesContainerStyle}
+                            >
                                 {messages.length === 0 ? (
                                     <div className="text-center text-gray-500 text-xs md:text-sm">
                                         <p>🔒🛡️ Welcome to Authenticated & Encrypted GitHub Chat!</p>
@@ -2030,10 +2117,17 @@ class GitHubSessionManager {
                                 </div>
                             )}
 
-                            {/* Message Input */}
-                            <div className="border-t border-gray-200 p-3 md:p-4 safe-bottom">
+                            {/* Message Input - Fixed positioning on mobile when keyboard is open */}
+                            <div 
+                                className={`
+                                    border-t border-gray-200 p-3 md:p-4 bg-white
+                                    ${isInputFocused && window.innerWidth < 768 ? 'fixed bottom-0 left-0 right-0 z-50' : ''}
+                                `}
+                                style={inputContainerStyle}
+                            >
                                 <form onSubmit={handleSendMessage} className="flex space-x-2 md:space-x-4">
                                     <input 
+                                        ref={messageInputRef}
                                         type="text" 
                                         value={messageInput}
                                         onChange={(e) => {
@@ -2043,6 +2137,8 @@ class GitHubSessionManager {
                                         placeholder="Type a message..." 
                                         className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm md:text-base"
                                         autoComplete="off"
+                                        autoCorrect="on"
+                                        autoCapitalize="sentences"
                                     />
                                     <button 
                                         type="submit" 
@@ -2168,6 +2264,33 @@ class GitHubSessionManager {
                             'general', true);
                     } catch (error) {
                         console.error('Could not send panic message:', error);
+                    }
+                }
+                else {
+                     // Try to find and connect to the last used session to send the message
+                    const sessions = sessionManager.getSessions();
+                    if (sessions.length > 0) {
+                        const lastSession = sessions[0]; // Most recent session
+                        try {
+                            const tempApi = new GitHubChatAPI();
+                            await tempApi.connect(lastSession.owner, lastSession.repo, sessionManager.decodeData(lastSession.token));
+                            await tempApi.setupEncryption(
+                                lastSession.encryptionMethod, 
+                                sessionManager.decodeData(lastSession.token), 
+                                lastSession.customKey ? sessionManager.decodeData(lastSession.customKey) : null
+                            );
+                            
+                            await tempApi.sendMessage(
+                                'SYSTEM',
+                                `⚠️ EMERGENCY: User "${lastUsername}" has triggered the panic button and wiped all local data!`,
+                                'general',
+                                true // isSystemMessage
+                            );
+                            
+                            tempApi.disconnect();
+                        } catch (error) {
+                            console.error('Could not send panic message:', error);
+                        }
                     }
                 }
                 
